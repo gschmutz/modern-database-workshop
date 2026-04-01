@@ -42,11 +42,11 @@ services:
       - bash
       - -c
       - |
-        conda create -y --name py312 python=3.12.8
-        source /opt/conda/etc/profile.d/conda.sh
-        conda activate py312
-        pip install ipykernel    
-        python -m ipykernel install --user --name py312 --display-name "Python 3.12.8 (ipykernel)"
+        #conda create -y --name py312 python=3.12.8
+        #source /opt/conda/etc/profile.d/conda.sh
+        #conda activate py312
+        #pip install ipykernel    
+        #python -m ipykernel install --user --name py312 --display-name "Python 3.12.8 (ipykernel)"
         start-notebook.sh
     restart: unless-stopped
   #  ================================== MongoDB ========================================== #
@@ -60,6 +60,8 @@ services:
       com.platys.password.envvars: PLATYS_MONGO_PASSWORD
     ports:
       - 27017:27017
+    extra_hosts:
+      - host.docker.internal:host-gateway
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=${PLATYS_MONGO_PASSWORD:-abc123!}
@@ -70,6 +72,13 @@ services:
       # seeding scripts
       - ./init/mongodb:/docker-entrypoint-initdb.d
     restart: unless-stopped
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-express
@@ -96,7 +105,7 @@ services:
     restart: unless-stopped
   #  ================================== Elasticsearch ========================================== #
   elasticsearch-1:
-    image: elasticsearch:8.17.4
+    image: elasticsearch:8.19.10
     hostname: elasticsearch-1
     container_name: elasticsearch-1
     labels:
@@ -115,7 +124,7 @@ services:
       xpack.security.http.ssl.enabled: false
       xpack.security.transport.ssl.enabled: false
       http.cors.enabled: 'true'
-      http.cors.allow-origin: http://${DOCKER_HOST_IP}:28275,http://${PUBLIC_IP}:28275,http://dejavu:1358,http://dataplatform:28125,http://dataplatform:28125,http://${PUBLIC_IP}:28125,http://${DOCKER_HOST_IP}:28125,http://127.0.0.1:1358
+      http.cors.allow-origin: http://${DOCKER_HOST_IP:-localhost}:28275,http://${PUBLIC_IP:-127.0.0.1}:28275,http://dejavu:1358,http://dataplatform:28125,http://dataplatform:28125,http://${PUBLIC_IP:-127.0.0.1}:28125,http://${DOCKER_HOST_IP:-localhost}:28125,http://127.0.0.1:1358
       http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
       http.cors.allow-credentials: 'true'
       cluster.routing.allocation.disk.threshold_enabled: 'true'
@@ -149,7 +158,7 @@ services:
     restart: unless-stopped
   #  ================================== Kibana ========================================== #
   kibana:
-    image: kibana:8.17.4
+    image: kibana:8.19.10
     hostname: kibana
     container_name: kibana
     labels:
@@ -213,8 +222,8 @@ services:
       com.platys.webui.url: http://dataplatform:7474
       com.platys.password.envvars: PLATYS_NEO4J_PASSWORD
     ports:
-      - 7474:7474
-      - 7687:7687
+      - 7474:7474      #  HTTP port #
+      - 7687:7687       #  Bolt port #
     environment:
       - NEO4J_server_bolt_listen__address=0.0.0.0:7687
       - NEO4J_AUTH=neo4j/${PLATYS_NEO4J_PASSWORD:-abc123abc123}
@@ -268,7 +277,7 @@ services:
     restart: unless-stopped
   #  ================================== InfluxData Telegraf ========================================== #
   telegraf:
-    image: telegraf:1.34
+    image: telegraf:1.37
     container_name: telegraf
     hostname: telegraf
     labels:
@@ -287,7 +296,7 @@ services:
     restart: unless-stopped
   #  ================================== InfluxDB 2 ========================================== #
   influxdb2:
-    image: influxdb:2.7
+    image: influxdb:2.8
     hostname: influxdb2
     container_name: influxdb2
     labels:
@@ -391,7 +400,7 @@ services:
     ports:
       - 3001:3000
     environment:
-      - SSHHOST=${DOCKER_HOST_IP}
+      - SSHHOST=${DOCKER_HOST_IP:-localhost}
       - SSHPORT=22
       - SSHUSER=
       - SSHAUTH=password
@@ -425,7 +434,7 @@ services:
       retries: 3
       start_period: 1m
   markdown-renderer:
-    image: trivadis/jinja2-renderer:latest
+    image: trivadis/jinja2-renderer:0.8.1
     container_name: markdown-renderer
     hostname: markdown-renderer
     labels:
@@ -433,13 +442,14 @@ services:
       com.platys.description: Platys Platform homepage rendering
     environment:
       USE_PUBLIC_IP: 'True'
-      PUBLIC_IP: ${PUBLIC_IP}
-      DOCKER_HOST_IP: ${DOCKER_HOST_IP}
+      PUBLIC_IP: ${PUBLIC_IP:-127.0.0.1}
+      DOCKER_HOST_IP: ${DOCKER_HOST_IP:-localhost}
       DATAPLATFORM_HOME: ${DATAPLATFORM_HOME}
       PLATYS_PLATFORM_NAME: nosql-platform
       PLATYS_PLATFORM_STACK: trivadis/platys-modern-data-platform
       PLATYS_PLATFORM_STACK_VERSION: develop
       PLATYS_COPY_COOKBOOK_DATA: 'False'
+      PLATYS_DATACENTER:
       SERVICE_LIST_VERSION: 2
     volumes:
       - ./artefacts/templates:/templates
