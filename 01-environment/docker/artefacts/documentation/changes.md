@@ -2,7 +2,7 @@
 
 See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/platys/blob/master/documentation/upgrade-platform-stack) for how to upgrade to newer version.
 
-## What's new in 1.19.2
+## What's new in 1.20.0
 
 ### New Services
 
@@ -11,6 +11,7 @@ See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/plat
  * Moat
  * RustFS
  * Lightdash
+ * Minio Aistor
 
 ### Version upgrades
 
@@ -24,15 +25,19 @@ See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/plat
  * Update `starburst` to `479-e.3`
  * Update `fluss` to `0.9.0-incubating`
  * Update `zeppelin` to `0.12.0`
+ * Update `lakefs` to `1.80`
+ * Update `trino` to `480`
 
 ### Enhancements
 
  * add default values for environment variables `PUBLIC_IP=127.0.0.1` and `DOCKER_HOST_IP=localhost`
  * change docker image for the iceberg rest service from `tabulario/iceberg-rest` to `apache/iceberg-rest-fixture`
+ * add aistor as an editon of Minio
  
 ### Breaking Changes
  
  * rename `SPARK_install_jars_packages` to `SPARK_install_java_packages`
+ * new Trino/Starburst and Presto configuation for Hive S3 named to `hive.properties` - `minio.properties` is deprecated and will be removed in `1.21.0`
 
 ### Bug Fixes
 
