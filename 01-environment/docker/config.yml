@@ -26,40 +26,34 @@
       env: '${PLATYS_ENV}'
       data_centers: 'dc1,dc2'
       data_center_to_use: 0
+
+      # either 'minio' or 'rustfs'
+      s3_service_to_use: minio
+      # a list of table formats to use, separated by comma, for example 'delta,iceberg,hudi'
+      table_formats_to_use: ''
+
       # enable jmx monitoring with prometheus
       jmx_monitoring_with_prometheus_enable: false
-      copy_cookbook_data_folder: false
-      # ========================================================================
-      # External Services
-      # ========================================================================
-      external:
-          KAFKA_enable: false
-          KAFKA_bootstrap_servers:
-          KAFKA_security_protocol:
-          KAFKA_sasl_mechanism:
-          KAFKA_login_module:
-          # Username to use for the tools to connect to the Kafka cluster, either set it here or use PLATYS_KAFKA_USERNAME and PLATYS_KAFKA_PASSWORD environment variable
-          KAFKA_sasl_username:
-          KAFKA_sasl_password:
-          SCHEMA_REGISTRY_enable: false
-          SCHEMA_REGISTRY_url:
-          S3_enable: false
-          S3_endpoint: s3.amazonaws.com
-          S3_default_region:
-          S3_path_style_access: false
-          S3_admin_bucket_name: 'admin-bucket'
-          ADLS_enable: false
-          ADLS_storage_account:
-          DATAHUB_enable: false
-          DATAHUB_gms_url:
-          OLLAMA_enable: false
-          OLLAMA_url: http://${PUBLIC_IP}:11434
-          OPENAI_model: false
-          OPENAI_base_url:
+
+      copy_cookbook_data_folder: true
+
       # ========================================================================
       # Platys Services
       # ========================================================================
       PROVISIONING_DATA_enable: false
+      PROVISIONING_DATA_additional_data_folder:      
+      #
+      # ===== Platys Modern Data Platform Init ========
+      #    
+      PLATYS_MDP_INIT_enable: false
+      PLATYS_MDP_INIT_env_variables: ''
+      PLATYS_MDP_INIT_use_env_file: false
+      PLATYS_MDP_INIT_env_filename: '.env'
+      #
+      # ===== Platys Modern Data Platform Docker Deploy ========
+      #    
+      PLATYS_MDP_DOCKER_DEPLOY_enable: false
+      PLATYS_MDP_DOCKER_DEPLOY_env_variables: ''       
       #
       # ===== Apache Zookeeper ========
       #
@@ -872,20 +866,30 @@
       #
       # ===== Jupyter ========
       #
+      #
+      # ===== Jupyter ========
+      #
       JUPYTER_enable: true
-      # one of 'minimal', 'r', 'scipy', 'tensorflow', 'datascience', 'all-spark'
+      # one of 'minimal', 'r', 'scipy', 'julia', 'tensorflow', 'pytorch', 'datascience', 'pyspark', all-spark'
       JUPYTER_edition: 'minimal'
-      JUPYTER_volume_map_data: false
+      JUPYTER_spark_base_version: '4.1'
+      # a space separated list of python packages
       JUPYTER_python_packages: ''
+      # the token to use, if empty a random token is generated
+      JUPYTER_token: ''
+      JUPYTER_nb_user: ''
+      JUPYTER_upload_data_transfer_to_workspace_enabled: false
+      JUPYTER_volume_map_data: false
+      JUPYTER_data_folder_on_docker_host: ./container-volume/jupyter/work
+      JUPYTER_requirements_file: ''
       JUPYTER_spark_jars_packages: ''
       JUPYTER_tokenless: false
-      JUPYTER_token: 'abc123!'
-      JUPYTER_nb_user: ''
       # JUPYTER_notebook_args: '--log-level='DEBUG' --dev-mode'
       JUPYTER_notebook_args: ''
       # one of 'lab', 'notebook', 'nbclassic', 'server'
       JUPYTER_startup_cmd: 'lab'
-      JUPYTER_download_jars: 'com.amazonaws:aws-java-sdk-bundle:1.11.375,org.apache.hadoop:hadoop-aws:3.2.1,com.google.guava:guava:14.0.1'
+      JUPYTER_download_jars: 'com.amazonaws:aws-java-sdk-bundle:1.12.262,org.apache.hadoop:hadoop-aws:3.3.4,com.google.guava:guava:27.1-jre,software.amazon.awssdk:bundle:2.27.1'
+      #JUPYTER_download_jars: 'software.amazon.awssdk:bundle:2.29.52,org.apache.hadoop:hadoop-aws:3.4.2,com.google.guava:guava:33.4.8-jre'    # spark 4.1.1
       JUPYTER_volume_map_docker_daemon: false
       #
       # ===== JupyterHub ========
@@ -1179,7 +1183,7 @@
       #
       # ===== Redis ========
       #
-      REDIS_enable: false
+      REDIS_enable: true
       # either 'redis' or 'valkey'
       REDIS_edition: redis      
       REDIS_replicasets: 0
@@ -1222,15 +1226,34 @@
       #
       # ===== Redis Insight ========
       #
-      REDIS_INSIGHT_enable: false
+      REDIS_INSIGHT_enable: true
       #
       # ===== Redis Commander ========
       #
-      REDIS_COMMANDER_enable: false
+      REDIS_COMMANDER_enable: true
+      #
+      # ===== Valkey ========
+      #
+      VALKEY_enable: false
+      VALKEY_replicasets: 0
+      VALKEY_volume_map_data: false      
+      VALKEY_allow_empty_password: true
+      VALKEY_password:
+      VALKEY_password_file:
+      VALKEY_aclfile:
+      VALKEY_disable_commands:
+      VALKEY_rdb_enabled: false
+      VALKEY_rdb_save_policy:
+      VALKEY_aof_enabled: true
+      VALKEY_io_threads:
+      VALKEY_io_threads_do_reads_enabled: false
+      VALKEY_overrides_config_file:
+      # one of 'nothing', 'warning', 'notice', 'verbose', 'debug' 
+      VALKEY_log_level: 'notice'      
       #
       # ===== Apache Casandra ========
       #
-      CASSANDRA_enable: false
+      CASSANDRA_enable: true
       # either 3 or 4 or 5
       CASSANDRA_major_version: 5
       CASSANDRA_volume_map_data: false
@@ -1325,7 +1348,7 @@
       #
       NEO4J_enable: true
       # either 4 or 5
-      NEO4J_major_version: 5
+      NEO4J_major_version: 26
       # either "community" or "enterprise"
       NEO4J_edition: community
       NEO4J_admin_password: abc123abc123
@@ -1409,7 +1432,7 @@
       #
       # ===== Influx DB 2.x ========
       #
-      INFLUXDB2_enable: true
+      INFLUXDB2_enable: false
       INFLUXDB2_volume_map_config: false
       INFLUXDB2_volume_map_data: false
       INFLUXDB2_username: influx
@@ -1417,11 +1440,23 @@
       INFLUXDB2_admin_token: '6Lv_ywMeuGfLOv4wa0aUz3uGOFPHERPGTOF4GsXobyYgEGIag2D3q8CJ0a91VTakjMtUp3nUuufGOJxrDe_32A=='
       INFLUXDB2_org: demo
       INFLUXDB2_bucket: demo-bucket
+      
       #
       # ===== Influx DB 3.x ========
       #
-      INFLUXDB3_enable: false
-      INFLUXDB3_volume_map_data: false      
+      INFLUXDB3_enable: true
+      # one of 'file' or 's3' or 'memory'
+      INFLUXDB3_object_store_type: file
+      INFLUXDB3_s3_bucket_name: influxdb3-bucket
+      INFLUXDB3_database: demo-db
+      INFLUXDB3_volume_map_data: false
+      INFLUXDB3_volume_map_plugins: false
+
+      #
+      # ===== Influx DB 3 Explorer (UI) ========
+      #
+      INFLUXDB3_EXPLORER_enable: true
+
       #
       # ===== Influx Telegraf ========
       #

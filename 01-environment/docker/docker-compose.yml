@@ -26,9 +26,9 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: "'yes'"
       GRANT_SUDO: "'yes'"
-      JUPYTER_TOKEN: ${PLATYS_JUPYTER_TOKEN:-abc123!}
+      JUPYTER_TOKEN: ${PLATYS_JUPYTER_TOKEN:-<token undefined>}
       DOCKER_STACKS_JUPYTER_CMD: lab
-      MAVEN_DOWNLOAD_JARS: com.amazonaws:aws-java-sdk-bundle:1.11.375,org.apache.hadoop:hadoop-aws:3.2.1,com.google.guava:guava:14.0.1
+      MAVEN_DOWNLOAD_JARS: com.amazonaws:aws-java-sdk-bundle:1.12.262,org.apache.hadoop:hadoop-aws:3.3.4,com.google.guava:guava:27.1-jre,software.amazon.awssdk:bundle:2.27.1
       # remove some JARS if they are conflicting with the ones installed above
       REMOVE_JARS: guava-14.0.1.jar
     volumes:
@@ -48,6 +48,91 @@ services:
         pip install ipykernel    
         python -m ipykernel install --user --name py312 --display-name "Python 3.12.8 (ipykernel)"
         start-notebook.sh
+    restart: unless-stopped
+  #  ================================== Redis ========================================== #
+  redis-1:
+    image: bitnamilegacy/redis:8.2
+    hostname: redis-1
+    container_name: redis-1
+    labels:
+      com.platys.name: redis
+      com.platys.description: Key-value store
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PORT_NUMBER=6379
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_AOF_ENABLED=yes
+      - REDIS_RDB_POLICY_DISABLED=yes
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: /opt/bitnami/scripts/redis/run.sh --loglevel notice
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, redis-cli --no-auth-warning ping | grep PONG]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  #  ================================== Redis Insight ========================================== #
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    hostname: redis-insight
+    labels:
+      com.platys.name: redis-insight
+      com.platys.description: Graphical interface for Redis
+      com.platys.webui.title: Redis Insight UI
+      com.platys.webui.url: http://dataplatform:28174
+    ports:
+      - 28174:5540
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Redis Commander ========================================== #
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    hostname: redis-commander
+    labels:
+      com.platys.name: redis-commander
+      com.platys.description: Graphical interface for Redis
+      com.platys.webui.title: Redis Commander UI
+      com.platys.webui.url: http://dataplatform:28119
+    ports:
+      - 28119:8081
+    environment:
+      - REDIS_HOST=redis-1
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=abc123!
+      - REDIS_DB=0
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Cassandra ========================================== #
+  cassandra-1:
+    image: bitnamilegacy/cassandra:5.0
+    container_name: cassandra-1
+    hostname: cassandra-1
+    labels:
+      com.platys.name: cassandra
+      com.platys.description: wide-column NoSQL database
+    ports:
+      - 29042:9042
+      - 7199:7199
+      - 9160:9160
+    environment:
+      - CASSANDRA_CLUSTER_NAME="Test Cluster"
+      - CASSANDRA_DATACENTER=se1
+      - CASSANDRA_PASSWORD_SEEDER=yes
+      - CASSANDRA_USER=cassandra
+      - CASSANDRA_PASSWORD=cassandra
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=128
+      - LOCAL_JMX=no
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./conf/cassandra/jmxremote.access:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/management/jmxremote.access
+      - ./conf/cassandra/jmxremote.password:/etc/cassandra/jmxremote.password
     restart: unless-stopped
   #  ================================== MongoDB ========================================== #
   mongo-1:
@@ -212,7 +297,7 @@ services:
     init: true
   #  ================================== Neo4J ========================================== #
   neo4j-1:
-    image: neo4j:5.26
+    image: neo4j:2026
     hostname: neo4j-1
     container_name: neo4j-1
     labels:
@@ -227,7 +312,6 @@ services:
     environment:
       - NEO4J_server_bolt_listen__address=0.0.0.0:7687
       - NEO4J_AUTH=neo4j/${PLATYS_NEO4J_PASSWORD:-abc123abc123}
-      - NEO4J_PLUGINS=[""]
       - NEO4J_dbms_security_allow__csv__import__from__file__urls=False
       - NEO4J_server_directories_import=
       - NEO4J_server_logs_debug_enabled=False
@@ -249,7 +333,7 @@ services:
       retries: 10
   #  ================================== GraphDB ========================================== #
   graphdb-1:
-    image: khaller/graphdb-free:10.8.4
+    image: ontotext/graphdb:11.3.2
     hostname: graphdb-1
     container_name: graphdb-1
     labels:
@@ -264,8 +348,10 @@ services:
       GDB_JAVA_OPTS: >-
         -Xmx2g -Xms2g
         -Dgraphdb.home=/opt/graphdb
+        -Dgraphdb.license.file=/opt/graphdb/home/conf/graphdb.license
         -Dgraphdb.workbench.importDirectory=/opt/graphdb/examples
-        -Dgraphdb.workbench.cors.enable=true
+        -Dgraphdb.jsonld.whitelist=https://w3c.github.io/json-ld-api/tests/*
+        -Dgraphdb.stats.default=disabled     -Dgraphdb.workbench.cors.enable=true
         -Denable-context-index=true
         -Dentity-pool-implementation=transactional
         -Dhealth.max.query.time.seconds=60
@@ -273,11 +359,16 @@ services:
         -Dreuse.vars.in.subselects=true
     volumes:
       - ./data-transfer:/data-transfer
-      - ./init/graphdb:/repository.init/
+      - ./licenses/graphdb:/opt/graphdb/home/conf/
     restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "curl -f -H 'Accept: text/html' http://localhost:17200/index.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   #  ================================== InfluxData Telegraf ========================================== #
   telegraf:
-    image: telegraf:1.37
+    image: telegraf:1.38
     container_name: telegraf
     hostname: telegraf
     labels:
@@ -286,40 +377,60 @@ services:
     environment:
       HOSTNAME: telegraf
       INFLUXDB_TOKEN: ${PLATYS_INFLUXDB_TOKEN:-}
-      INFLUXDB_ORGANIZATION: demo
-      INFLUXDB_BUCKET: demo-bucket
+      INFLUXDB_DATABASE: demo-db
     volumes:
       - ./data-transfer:/data-transfer
-      - ./conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+      - ./conf/telegraf/telegraf-influxdb3.conf:/etc/telegraf/telegraf.conf
       # Mount for Docker API access
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
-  #  ================================== InfluxDB 2 ========================================== #
-  influxdb2:
-    image: influxdb:2.8
-    hostname: influxdb2
-    container_name: influxdb2
+  #  ================================== InfluxDB 3 ========================================== #
+  influxdb3:
+    image: influxdb:3-core
+    hostname: influxdb3
+    container_name: influxdb3
     labels:
-      com.platys.name: influxdb2
+      com.platys.name: influxdb3
       com.platys.description: Timeseries Database
-      com.platys.webui.title: InfluxDB 2.0 UI
-      com.platys.webui.url: http://dataplatform:19999
-      com.platys.restapi.title: InfluxDB 2.0 Rest API
-      com.platys.restapi.url: http://dataplatform:19999/api/v2
+      com.platys.restapi.title: InfluxDB 3.0 Rest API
+      com.platys.restapi.url: http://dataplatform:28263/api/v3
     ports:
-      - 19999:8086
-    environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: influx
-      DOCKER_INFLUXDB_INIT_PASSWORD: abc123abc123!
-      DOCKER_INFLUXDB_INIT_ORG: demo
-      DOCKER_INFLUXDB_INIT_BUCKET: demo-bucket
-      DOCKER_INFLUXDB_INIT_RETENTION: 1w
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: 6Lv_ywMeuGfLOv4wa0aUz3uGOFPHERPGTOF4GsXobyYgEGIag2D3q8CJ0a91VTakjMtUp3nUuufGOJxrDe_32A==
+      - 28263:8181
     volumes:
       - ./data-transfer:/data-transfer
-      - ./init/influxdb2:/docker-entrypoint-initdb.d
-    command: --reporting-disabled
+    restart: unless-stopped
+    command:
+      - influxdb3
+      - serve
+      - --node-id=node0
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --plugin-dir=/var/lib/influxdb3/plugins   # Optional: only needed for processing engine plugins      
+    healthcheck:
+      test: [CMD, curl, -f, -H, 'Authorization: Bearer apiv3_test', http://localhost:8181/ping]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+  #  ================================== InfluxDB 3 Explorer ========================================== #
+  influxdb3-explorer:
+    image: influxdata/influxdb3-ui:latest
+    hostname: influxdb3-explorer
+    container_name: influxdb3-explorer
+    labels:
+      com.platys.name: influxdb3-explorer
+      com.platys.description: Timeseries Database UI
+      com.platys.webui.title: InfluxDB 3.0 Explorer
+      com.platys.webui.url: http://dataplatform:28264
+      com.platys.password.envvars: PLATYS_INFLUXDB3_EXPLORER_SECRET_KEY
+    ports:
+      - 28264:80
+    environment:
+      SESSION_SECRET_KEY: ${PLATYS_INFLUXDB3_EXPLORER_SECRET_KEY:-3fd4e9d0a3f7307fb5e3285414781fc2cfff1486d9306d0ea10dd5f39d6b0ea5}
+      DATABASE_URL: /db/sqlite.db
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./conf/influxdb3-explorer:/app-root/config:ro
     restart: unless-stopped
   #  ================================== DbGate ========================================== #
   dbgate:
@@ -448,7 +559,7 @@ services:
       PLATYS_PLATFORM_NAME: nosql-platform
       PLATYS_PLATFORM_STACK: trivadis/platys-modern-data-platform
       PLATYS_PLATFORM_STACK_VERSION: develop
-      PLATYS_COPY_COOKBOOK_DATA: 'False'
+      PLATYS_COPY_COOKBOOK_DATA: 'True'
       PLATYS_DATACENTER:
       SERVICE_LIST_VERSION: 2
     volumes:
