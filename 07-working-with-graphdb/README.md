@@ -9,17 +9,40 @@ In this workshop you learn how to load RDF data into GraphDB and then use the SP
 ## What you will learn
 
 - How to create a repository in GraphDB Workbench
-- How to load RDF data from a URL into GraphDB
-- How to explore and visualise the graph in the GraphDB Workbench
-- How to write SPARQL queries to retrieve and filter RDF graph data
+- How to load RDF data in Turtle format from a URL into GraphDB
+- How to explore the class hierarchy and visualise the graph in the GraphDB Workbench
+- How to write SPARQL queries to retrieve, filter, join, and aggregate RDF graph data
 
 ## Prerequisites
 
 - The **Data Platform** described [here](../01-environment/README.md) is running and accessible
 
+## Background: RDF and Turtle format
+
+GraphDB is an RDF triple store. RDF (Resource Description Framework) models data as a collection of **triples**, each consisting of:
+
+- **Subject** — the resource being described (identified by a URI)
+- **Predicate** — the property or relationship
+- **Object** — the value or another resource
+
+For example, the triple `imdb:title/TheMatrix schema:name "The Matrix"` states that the resource `TheMatrix` has the name "The Matrix".
+
+Turtle (`.ttl`) is a compact, human-readable syntax for writing RDF data. A short example looks like this:
+
+```turtle
+@prefix schema: <http://schema.org/> .
+@prefix imdb:   <http://academy.ontotext.com/imdb/> .
+
+imdb:title/TheMatrix a imdb:ColorMovie ;
+    schema:name "The Matrix" ;
+    schema:director imdb:person/LanaWachowski .
+```
+
+The `a` keyword is shorthand for `rdf:type`. Multiple predicates for the same subject are separated by `;`.
+
 ## Loading RDF data
 
-We will use the Movies data taken from a tutorial provided by GraphDB. The data is available in turtle syntax, a common data format for storing RDF data in the GitHub project under this link <https://raw.githubusercontent.com/gschmutz/nosql-workshop/master/07-working-with-graphdb/data/movies.ttl>. If you click on the link you will see the data as shown below 
+We will use the Movies data taken from a tutorial provided by GraphDB. The data is available in Turtle syntax in the GitHub project under this link <https://raw.githubusercontent.com/gschmutz/nosql-workshop/master/07-working-with-graphdb/data/movies.ttl>. If you click on the link you will see the data as shown below 
 
 ![](./images/graphdb-movies-data.png)
 
@@ -63,7 +86,7 @@ Click on **Explore** and **Class hierarchy**
 
 ![](./images/graphdb-explore-1.png)
 
-We can see the schema of the movies graph with the `schema:Movie` base class and the two subclasses `imbd:BlackAndWhiteMovie` and `imdb:ColorMovie`.
+We can see the schema of the movies graph with the `schema:Movie` base class and the two subclasses `imdb:BlackAndWhiteMovie` and `imdb:ColorMovie`.
 
 Click on the larger, inner circle, representing the color movies
 
@@ -93,7 +116,9 @@ Navigating in the graph like that has some potential, but first we need to find 
 
 ## Querying the graph using SPARQL
 
-Click on SPARQL in the navigation menu to the left and we will get to the SPARQL view which integrates the [YASGUI query editor](http://about.yasgui.org/).
+Before querying, make sure the **Movies** repository is selected. You can see and change the active repository in the top-right corner of the workbench. If it shows a different repository, click the dropdown and select **Movies**.
+
+Click on **SPARQL** in the navigation menu to the left and we will get to the SPARQL view which integrates the [YASGUI query editor](http://about.yasgui.org/).
 
 ![](./images/graphdb-sparql-1.png)
 
@@ -117,7 +142,7 @@ select * where {
 }
 ```
 
-The query selects RDF statements whose subject is the movie Pirates of the Caribbean At World's End (identified by the IRI `http://academy.ontotext.com/imdb/title/TheBourneUltimatum`). 
+The query selects RDF statements whose subject is the movie Pirates of the Caribbean At World's End (identified by the IRI `http://academy.ontotext.com/imdb/title/PiratesoftheCaribbeanAtWorldsEnd`). 
 
 ![](./images/graphdb-sparql-3.png)
 
@@ -192,3 +217,66 @@ The table shows the results from executing the query.
 ![](./images/graphdb-sparql-6.png)
 
 Since we also used `ORDER BY DESC(?numMovies)` to order the results by movie count in descending order, we can easily see that both Clint Eastwood and Woody Allen made 10 movies where they were the leading actor and the director.
+
+### Filtering results with FILTER
+
+The `FILTER` keyword restricts results to rows that satisfy a condition. The following query returns all color movies whose name contains the word "dark", using a case-insensitive regular expression:
+
+```sparql
+PREFIX imdb: <http://academy.ontotext.com/imdb/>
+PREFIX schema: <http://schema.org/>
+
+SELECT ?movie ?movieName ?commentCount {
+    ?movie a imdb:ColorMovie ;
+           schema:name ?movieName ;
+           schema:commentCount ?commentCount .
+    FILTER regex(?movieName, "dark", "i")
+} ORDER BY DESC(?commentCount)
+```
+
+You can also use numeric comparisons in `FILTER`. For example, to find highly-commented movies:
+
+```sparql
+PREFIX imdb: <http://academy.ontotext.com/imdb/>
+PREFIX schema: <http://schema.org/>
+
+SELECT ?movie ?movieName ?commentCount {
+    ?movie a imdb:ColorMovie ;
+           schema:name ?movieName ;
+           schema:commentCount ?commentCount .
+    FILTER (?commentCount > 500)
+} ORDER BY DESC(?commentCount)
+```
+
+### Handling optional data with OPTIONAL
+
+Not every movie has all predicates populated. The `OPTIONAL` clause lets you include data that may or may not be present — rows where the optional pattern does not match are still returned, with the variable left unbound (empty).
+
+The following query retrieves all movies along with their rating, if one exists:
+
+```sparql
+PREFIX imdb: <http://academy.ontotext.com/imdb/>
+PREFIX schema: <http://schema.org/>
+
+SELECT ?movieName ?rating ?commentCount {
+    ?movie a imdb:ColorMovie ;
+           schema:name ?movieName ;
+           schema:commentCount ?commentCount .
+    OPTIONAL { ?movie schema:ratingValue ?rating }
+} ORDER BY DESC(?commentCount)
+LIMIT 20
+```
+
+Movies that have no `schema:ratingValue` triple will still appear in the results, with `?rating` left blank.
+
+### Counting triples in the repository
+
+To get a quick count of how many triples are stored in the active repository:
+
+```sparql
+SELECT (COUNT(*) AS ?tripleCount) {
+    ?s ?p ?o .
+}
+```
+
+This is a useful sanity check after loading data to confirm the import succeeded.
