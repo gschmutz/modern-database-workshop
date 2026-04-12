@@ -31,7 +31,7 @@ Click on **Create new repository** and select **GraphDB Repository**.
 
 ![](./images/graphdb-workbench-2.png)
 
-Enter `Movies` into the **Repository** field 
+Enter `Movies` into the **Repository ID** field 
 
 ![](./images/graphdb-workbench-3.png)
 
