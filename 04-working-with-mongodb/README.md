@@ -4,6 +4,20 @@ In this workshop we will learn how to use the MongoDB NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible. 
 
+## What you will learn
+
+- How to connect to MongoDB using the `mongosh` command-line utility and browser-based GUIs
+- How to create and manage documents and collections
+- How to query documents using query selectors and projection
+- How to update and delete documents
+- How to optimize query performance using indexes
+- How to perform full-text search
+- How to aggregate data using the aggregation pipeline
+
+## Prerequisites
+
+- The **Data Platform** described [here](../01-environment) is running and accessible
+
 ## Connecting to the MongoDB environment
 
 ### Using the MongoDB Command Line utility

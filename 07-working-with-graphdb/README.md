@@ -6,6 +6,17 @@ We assume that the platform described [here](../01-environment/README.md) is run
 
 In this workshop you learn how to load RDF data into GraphDB and then use the SPARQL query language to query the data.
 
+## What you will learn
+
+- How to create a repository in GraphDB Workbench
+- How to load RDF data from a URL into GraphDB
+- How to explore and visualise the graph in the GraphDB Workbench
+- How to write SPARQL queries to retrieve and filter RDF graph data
+
+## Prerequisites
+
+- The **Data Platform** described [here](../01-environment/README.md) is running and accessible
+
 ## Loading RDF data
 
 We will use the Movies data taken from a tutorial provided by GraphDB. The data is available in turtle syntax, a common data format for storing RDF data in the GitHub project under this link <https://raw.githubusercontent.com/gschmutz/nosql-workshop/master/07-working-with-graphdb/data/movies.ttl>. If you click on the link you will see the data as shown below 

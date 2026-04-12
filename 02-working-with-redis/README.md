@@ -2,6 +2,20 @@
 
 In this workshop we will learn the basics of working with Redis. We will be using Docker for initialising Redis in a container. 
 
+## What you will learn
+
+- How to connect to Redis using the command-line utility, Redis Commander, and Redis Insight
+- How to work with String data structures (GET, SET, increment/decrement, expiration/TTL)
+- How to work with Set data structures
+- How to work with Sorted Set data structures
+- How to work with Hash data structures
+- How to benchmark Redis performance with the built-in benchmark tool
+- How to interact with Redis using the Python API
+
+## Prerequisites
+
+- The **Data Platform** described [here](../01-environment) is running and accessible
+
 ## Connecting to the Redis environment
 
 For connecting to Redis, we can either use the Redis Command Line Utility or the browser-based Redis Commander.

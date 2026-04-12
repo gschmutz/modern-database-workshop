@@ -4,6 +4,19 @@ In this workshop we will learn how to use the Elasticsearch NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible. 
 
+## What you will learn
+
+- How to connect to Elasticsearch via its REST API and browser-based GUIs
+- How to create index mappings to define document structure
+- How to insert, update, and delete documents
+- How to configure and use analysers for text processing
+- How to perform URI search, query/filter, phrase, and proximity searches
+- How to sort search results
+
+## Prerequisites
+
+- The **Data Platform** described [here](../01-environment) is running and accessible
+
 ## Connecting to the Elasticsearch environment
 
 ### Using REST API

@@ -3,6 +3,20 @@ In this workshop we will learn how to use the Apache Cassandra NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible.
 
+## What you will learn
+
+- How to connect to Cassandra using the `cqlsh` command-line utility and a browser-based GUI
+- How to create keyspaces and tables using CQL
+- How to use "static" (skinny row) and "dynamic" (wide row) table design patterns
+- How to insert, query, update, and delete data
+- How to use counter columns for atomic increment/decrement operations
+- How to model data for efficient query patterns through denormalization
+- How to interact with Cassandra using the Python API
+
+## Prerequisites
+
+- The **Data Platform** described [here](../01-environment) is running and accessible
+
 ## Connecting to the Cassandra environment
 
 ### Using the Cassandra Command Line utility
