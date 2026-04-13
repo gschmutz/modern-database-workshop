@@ -13,6 +13,8 @@ In this workshop you learn how to use Neo4J for querying, visualisation, and dat
 - [Connecting to the Cypher Shell (optional)](#connecting-to-the-cypher-shell-optional)
 - [Connecting with Neo4J Browser](#connecting-with-neo4j-browser)
 - [Loading the Movie Graph](#loading-the-movie-graph)
+- [Indexes and Constraints](#indexes-and-constraints)
+- [Viewing the Database](#viewing-the-database)
 - [Example Queries](#example-queries)
 
 ## What you will learn
