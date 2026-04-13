@@ -35,6 +35,8 @@ Note that Cypher queries must end with a semicolon.
 neo4j@neo4j>
 ```
 
+> **What you should see:** the `neo4j@neo4j>` prompt confirming a successful connection over the Bolt protocol.
+
 Type `:help` to get a list of available commands 
 
 ```bash
@@ -65,6 +67,8 @@ For help on cypher please visit:
     https://neo4j.com/docs/cypher-manual/current/
 ```
 
+> **What you should see:** the list of available shell commands such as `:begin`, `:commit`, `:connect`, `:exit`, `:help`, and others, along with keyboard shortcuts and a link to the Cypher manual.
+
 You can also execute any valid Cypher statements. 
 
 Enter `:exit` to leave the CLI.
@@ -77,11 +81,15 @@ In a browser window, navigate to <http://dataplatform:7474> and you should direc
 
 ![Alt Image Text](./images/neo4j-login.png "Neo4J Browser")
 
+> **What you should see:** the login form with a Connect URL field, a Username field, and a Password field.
+
 Enter `bolt://dataplatform:7687` into the **Connect URL**, `neo4j` into the **Username** and `abc123abc123` into the **Password** field and click **Connect**. 
 
 If successfully connected, you should see a page similar to the one shown below:
 
 ![Alt Image Text](./images/neo4j-browser-home.png "Neo4J Browser")
+
+> **What you should see:** the Neo4J Browser home page with a command bar at the top and an empty canvas below.
 
 Neo4J comes with some predefined tutorials, which provide an easy way for loading some data into the graph and then using that graph to exercise the query capabilities of the graph. 
 
@@ -89,15 +97,21 @@ On the top panel, enter `:play movie graph` to start the **Movie Graph** tutoria
 
 ![Alt Image Text](./images/neo4j-play-moviegraph.png "Neo4J Browser")
 
+> **What you should see:** a tutorial panel slides in from the right describing the Movie Graph dataset.
+
 Execute the statement by either hitting ENTER or click on the play arrow on the top right corner.
 
 ![Alt Image Text](./images/neo4j-moviegraph.png "Neo4J Browser")
+
+> **What you should see:** the first slide of the Movie Graph tutorial, showing an overview of the dataset with navigation arrows at the bottom.
 
 ## Loading the Movie Graph
 
 Use the pin on the Movie Graph panel to pin that panel to the top. We will follow the instructions in this window step by step. Click on the next step in the navigation bar on the bottom of the panel to navigate to 2/8.
 
 ![Alt Image Text](./images/neo4j-create-graph.png "Neo4J Browser")
+
+> **What you should see:** step 2/8 of the tutorial showing a CREATE statement that builds the full movie graph.
 
 Click on the little arrow, left to the `CREATE ..` statement and it should show up in the top panel.
 
@@ -107,6 +121,9 @@ Before continuing with the next step, let's see how the graph looks like. Click 
 
 ![Alt Image Text](./images/neo4j-database-view.png "Neo4J Browser")
 
+> **What you should see:** a sidebar listing Node Labels (Movie, Person), Relationship Types (ACTED_IN, DIRECTED, etc.) and Property Keys, each with a count.
+> **What just happened?** the CREATE statement inserted all the movie nodes and person nodes and the relationships between them into the Neo4J graph database.
+
 We can see the different **Node Labels**, the **Relationship Types** and **Property Keys** which have been created for the Movie Graph and how many have been created of each type. 
 
 ## Example Queries
@@ -114,6 +131,8 @@ We can see the different **Node Labels**, the **Relationship Types** and **Prope
 Navigate to step 3/8 to find some Cipher statements for finding the information in the graph.
 
 ![Alt Image Text](./images/neo4j-find-queries.png "Neo4J Browser")
+
+> **What you should see:** step 3/8 showing several pre-written MATCH queries ready to be copied into the editor.
 
 The first statement, finds the actor named "Tom Hanks"
 
@@ -124,6 +143,9 @@ MATCH (tom {name: "Tom Hanks"}) RETURN tom
 Execute it and scroll down to see the result in a graphical way. 
 
 ![Alt Image Text](./images/neo4j-find-tom-hanks.png "Neo4J Browser")
+
+> **What you should see:** a single Person node labelled "Tom Hanks" is displayed on the canvas.
+> **What just happened?** MATCH found the node whose `name` property equals "Tom Hanks" and RETURN rendered it as a visual node.
 
 We have only matched on a single Person, therefore only a single node is shown. 
 
@@ -137,9 +159,14 @@ The result is similar to the one before, but this time another type of node, a *
 
 ![Alt Image Text](./images/neo4j-show-expand-menu.png "Neo4J Browser")
 
+> **What you should see:** an expand icon appears around the Cloud Atlas movie node when it is clicked.
+
 Click on expand and you see all nodes related to the movie node
 
 ![Alt Image Text](./images/neo4j-show-related-nodes.png "Neo4J Browser")
+
+> **What you should see:** all Person nodes that have a relationship to the Cloud Atlas movie node, connected by labelled edges.
+> **What just happened?** Neo4J traversed every relationship connected to the Cloud Atlas node and rendered the neighbouring nodes on the canvas.
 
 We can see that these are all of type Person (shown by all having the same color). 
 
@@ -153,6 +180,9 @@ Show Tom Hanks' co-actors:
 MATCH (tom:Person {name:"Tom Hanks"})-[:ACTED_IN]->(m)<-[:ACTED_IN]-(coActors) RETURN coActors.name
 ```
 
+> **What you should see:** a list of actor names who appeared in at least one movie alongside Tom Hanks.
+> **What just happened?** the pattern `(tom)-[:ACTED_IN]->(m)<-[:ACTED_IN]-(coActors)` navigates two hops through the graph — from Tom Hanks to movies he acted in, then back out to all other actors in those same movies.
+
 or the Bacon path, the shortest path of any relationships to Meg Ryan
 
 ```
@@ -165,5 +195,8 @@ RETURN p
 the result will show the shortest path from Kevin Bacon to Meg Ryan
 
 ![Alt Image Text](./images/neo4j-shortest-path.png "Neo4J Browser")
+
+> **What you should see:** a chain of nodes and relationships showing the shortest sequence of connections between Kevin Bacon and Meg Ryan.
+> **What just happened?** `shortestPath` ran a breadth-first search through the graph and returned the minimum-hop path between the two people — the foundation of the "Six Degrees of Kevin Bacon" game.
 
 

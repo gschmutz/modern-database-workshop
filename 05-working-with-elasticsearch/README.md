@@ -27,6 +27,8 @@ In a browser window, navigate to <http://dataplatform:9200/> just to see that El
 
 ![Alt Image Text](./images/browser-es-test.png "Elasticsearch in Browser")
 
+> **What you should see:** A JSON response in the browser containing the cluster name, version number, and the tagline "You Know, for Search".
+
 Because most of the commands use another HTTP Method than `GET`, using the browser like shown is only of limited use. 
 
 To have more control over the HTTP method to use, the `curl` command can be used. From a terminal window, use curl and the GET method on the address specified, using JSON for the `Content-Type` header attribute.
@@ -56,6 +58,8 @@ You should get a result similar to the one shown below.
   "tagline" : "You Know, for Search"
 }
 ``` 
+
+> **What you should see:** The same JSON cluster info — cluster name, version details, and the tagline "You Know, for Search" — confirming Elasticsearch is reachable via the REST API.
 
 In this workshop we will be using the method with `curl` for most of the times. But there are other browser-based GUIs which can be used as well 
 
@@ -98,6 +102,8 @@ It is part of the dataplatform but it can also be installed as a [Desktop App](h
 In a browser window, navigate to <http://dataplatform:28275> and click on **ADD ELASTICSEARCH CLUSTER**. Enter `http://dataplatform:9200` into the **Uri** field and click **Connect**. You should arrive on the ElasticVie home screen as shown below. 
 
 ![Alt Image Text](./images/elasticvue.png "ElasticVue")
+
+> **What you should see:** The ElasticVue home screen showing an overview of the connected cluster and a list of available indices.
 
 #### Dejavu Application (not installed)
 
@@ -189,6 +195,10 @@ gus@gusmacbook ~> curl -H "Content-Type: application/json" -XPUT http://dataplat
 {"acknowledged":true,"shards_acknowledged":true,"index":"movies"}⏎
 ```
 
+> **What you should see:** `{"acknowledged":true}` confirming the index was created successfully.
+>
+> **What just happened?** Elasticsearch created the `movies` index with the specified field mappings — types like `text` are analysed for full-text search while `keyword` types are stored as-is for exact matching and aggregations.
+
 Check that the mapping was correctly loaded by getting it back using the following command:
 
 ```bash
@@ -243,6 +253,11 @@ curl -XPUT "http://dataplatform:9200/movies/_doc/110912" -H 'Content-Type: appli
     ]
 }'
 ```
+
+> **What you should see:** A response containing `"result":"created"` and the assigned `_id` (e.g. `"_id":"110912"`).
+>
+> **What just happened?** Elasticsearch indexed the document — it was tokenised, analysed, and added to the inverted index, making it immediately searchable.
+
 ### Retrieve the movie
 
 You can now use the `GET` http method against the **movies** index to check if the movie has been added to the index.
@@ -264,6 +279,8 @@ but of course as we know the id of the document, we can also retrieve specifical
 ```bash
 curl -XGET http://dataplatform:9200/movies/_doc/110912
 ```
+
+> **What you should see:** The full document JSON in the `_source` field along with metadata fields `_index`, `_id`, and `"found": true`.
 
 ### Update the movie
 
@@ -302,6 +319,10 @@ bash-3.2$ curl -H "Content-Type: application/json" -XPOST http://dataplatform:92
 }
 ```
 
+> **What you should see:** A response containing `"result":"updated"` (or `"result":"noop"` if the value was unchanged) and the incremented `_version` number.
+>
+> **What just happened?** Elasticsearch updates are actually delete-and-reindex operations internally — the old document version is marked deleted and a new version is indexed.
+
 Let's see if the update was successful
 
 ```bash
@@ -317,6 +338,8 @@ Last but not least let's remove the movie by using the DELETE method on the URI.
 ```bash
 curl -XDELETE http://dataplatform:9200/movies/_doc/110912
 ```
+
+> **What you should see:** A response containing `"result":"deleted"`.
 
 Let's see if the delete was successful
 
@@ -371,6 +394,8 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 }'
 ```
 
+> **What you should see:** Documents matching the query, ranked by relevance score.
+
 You will notice that **The Godfather** and **The Lord of the Rings** is listed as well as **The Matrix**. This is because the analyser used is the default full text / partial match analyser. Additionally, **The Godfather** appears even above (with more relevance) than **The Matrix** due to the small number of documents across many shards. A larger corpus of documents would fix/improve the relevancy.
 
 Let's search for a genre of 'sci' as follows
@@ -385,6 +410,10 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
     }
 }'
 ```
+
+> **What you should see:** Only documents containing the exact phrase "sci" in the `genres` field.
+>
+> **What just happened?** Phrase queries require the terms to appear adjacent and in the same order, unlike a regular `match` which allows any order.
 
 You will notice that the results might not be as expected since the results are all films with 'sci' such as 'Sci-Fi'. 
 
@@ -414,6 +443,10 @@ curl -H "Content-Type: application/json" -XPUT http://dataplatform:9200/movies -
     }
 }'
 ```
+
+> **What you should see:** `{"acknowledged":true}` confirming the index was re-created with the updated mappings.
+>
+> **What just happened?** Elasticsearch created the index with the specified field mappings — types like `text` are analysed for full-text search while `keyword` types are stored as-is for exact matching and aggregations.
 
 So to recap what just happened here:
  * For string/text fields that should be exact matches then define as a keyword mapping
@@ -447,6 +480,8 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 }'
 ``` 
 
+> **What you should see:** Documents matching the query, ranked by relevance score — this time only results with "Matrix" in the title should appear because the `english` analyser is now applied.
+
 So now our search for a genre of 'sci' will no longer return a result
 
 ```bash
@@ -459,6 +494,8 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
     }
 }'
 ```
+
+> **What you should see:** An empty hits array — no documents are returned because `genres` is now a `keyword` field requiring an exact match, and "sci" does not exactly match any stored genre value.
 
 We now have to search for an exact match, for example we can search for 'sci-fi'
 
@@ -473,6 +510,8 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 }'
 ```
 
+> **What you should see:** An empty hits array — the `keyword` field is case-sensitive, so "sci-fi" does not match "Sci-Fi".
+
 We still don't get any result. The search is even case sensitive, so it really has to be an exact match, so a search for 'Sci-Fi' will return us the movie
 
 ```bash
@@ -485,6 +524,10 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
     }
 }'
 ```
+
+> **What you should see:** Only documents containing the exact phrase "Sci-Fi" in the `genres` field.
+>
+> **What just happened?** Phrase queries require the terms to appear adjacent and in the same order, unlike a regular `match` which allows any order.
 
 ## Searching in Elasticsearch
 
@@ -549,6 +592,10 @@ gus@gusmacbook ~> curl http://dataplatform:9200/movies/_search?q=title:matrix
 }},{"_index":"movies","_id":"0133093","_score":5.900235,"_source":{"id": "0133093", "title": "The Matrix", "year": 1999, "runtime": ["136"], "languages": ["en"], "rating": 8.6, "votes": 1496768, "genres": ["Action", "Sci-Fi"], "plotOutline": "Thomas A. Anderson is a man living two lives. By day he is an average computer programmer and by night a hacker known as Neo. Neo has always questioned his reality, but the truth is far beyond his imagination. Neo finds himself targeted by the police when he is contacted by Morpheus, a legendary computer hacker branded a terrorist by the government. Morpheus awakens Neo to the real world, a ravaged wasteland where most of humanity have been captured by a race of machines that live off of the humans' body heat and electrochemical energy and who imprison their minds within an artificial reality known as the Matrix. As a rebel against the machines, Neo must return to the Matrix and confront the agents: super-powerful computer programs devoted to snuffing out Neo and the entire human rebellion.", "rank": 19}}]}}
 ```
 
+> **What you should see:** A JSON hits array with matching documents and their `_score` (relevance score).
+>
+> **What just happened?** Elasticsearch scored each document using TF/IDF (term frequency / inverse document frequency) and returned the highest-scoring matches first.
+
 We can include the `explain` parameter, so that for each hit an explanation of how scoring of the hits is computed and returned
 
 ```bash
@@ -558,6 +605,8 @@ curl http://dataplatform:9200/movies/_search?q=title:matrix&explain=true
 Because their is no body needed, you can also directly execute them from a browser
 
 ![Alt Image Text](./images/query-lite-from-browser.png "Query lite in Browser")
+
+> **What you should see:** A JSON hits array in the browser with matching documents and their `_score` (relevance score).
 
 **Note:** Do not use this approach in Production. It's easy to break, URL may need to be encoded, is a security risk and it's very fragile.
 
@@ -620,6 +669,10 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 }'
 ```
 
+> **What you should see:** Only documents containing the exact phrase (words in order, within the specified slop distance).
+>
+> **What just happened?** Phrase queries require the terms to appear adjacent and in the same order, unlike a regular `match` which allows any order.
+
 For more details, refer to the [Elasticsearch Match Phrase Query](https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-query-phrase.html) documentation.
 
 ### Proximity query
@@ -637,6 +690,10 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 }'
 ```
 
+> **What you should see:** Documents where the terms appear within the specified slop distance of each other, ranked by how close the terms are.
+>
+> **What just happened?** A proximity query allows the terms to appear near each other but not necessarily adjacent — the `slop` value is the maximum number of intervening tokens permitted.
+
 ### Sorting
 
 In a URL Search, sorting can be enabled by adding the `sort` parameter
@@ -644,6 +701,8 @@ In a URL Search, sorting can be enabled by adding the `sort` parameter
 ```bash
 curl -H "Content-Type: application/json" -XGET http://localhost:9200/movies/_search?sort=year
 ```
+
+> **What you should see:** Results ordered by the `year` field rather than by relevance score.
 
 Sorting works out of the box for things like integers, years etc, but not for text fields that are analysed for full text search because they exist in the inverted index as individual terms and not as the full string.
 
@@ -678,3 +737,5 @@ With that in place, the sorting query will work using the `title.raw` field inst
 ```bash
 curl -H "Content-Type: application/json" -XGET http://localhost:9200/movies/_search?sort=title.raw
 ```
+
+> **What you should see:** Results ordered alphabetically by the `title.raw` keyword field rather than by relevance score.

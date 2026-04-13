@@ -37,6 +37,8 @@ Use HELP for help.
 cqlsh>
 ```
 
+> **What you should see:** The `cqlsh>` prompt along with the cluster name, Cassandra version, CQL spec version, and native protocol version printed above it.
+
 You are now at the Cassandra CQL command prompt, ready to execute CQL statements.
 
 We can also see the actual version of Cassandra, CQL and cqlsh available to us.
@@ -63,6 +65,8 @@ cqlsh> SELECT * FROM system_schema.keyspaces;
 (5 rows)
 ```
 
+> **What you should see:** The five built-in system keyspaces (`system_auth`, `system_schema`, `system_distributed`, `system`, `system_traces`) listed in a table with their replication settings.
+
 ### Using browser-based GUI
 Instead of working over the command line and therefore having to connect to the Docker Host via SSH, we can also use a browser based GUI to access Cassandra. Two browser-based utilities are available as part of the platform.
 
@@ -86,6 +90,8 @@ Select `Cassandra` for the **Connection type** and enter the following values:
 Click **Test** to check that connection settings are valid and then click **Connect**. 
 
 The **Cassandra** connection will show up below **CONNECTIONS**. 
+
+> **What you should see:** The DbGate web UI with the Cassandra connection listed under CONNECTIONS, and the keyspaces visible when the connection is expanded.
 
 #### Apache Zeppelin
 
@@ -139,6 +145,9 @@ CREATE KEYSPACE movies WITH replication =
   {'class':'SimpleStrategy','replication_factor':1};
 ```
 
+> **What you should see:** No error message — the keyspace is created silently.
+> **What just happened?** A keyspace is Cassandra's top-level namespace, equivalent to a database schema in SQL. The replication factor controls how many nodes store copies of the data — with `replication_factor: 1` each row is stored on exactly one node.
+
 We'll be using SimpleStrategy to keep things simple, because our Cassandra setup is just single node.
 
 In a production environment, where it's usually common to have multiple datacenters, `NetworkTopologyStrategy` is generally used because it better distributes data across datacenters.
@@ -150,6 +159,8 @@ To be able to work with tables, you need to use your keyspace, as shown in the f
 ```
 USE movies;
 ```
+
+> **What you should see:** The prompt changes from `cqlsh>` to `cqlsh:movies>` to indicate the active keyspace.
 
 Another option is to prefix the table name with the keyspace name in all queries, similar to what you can do when referencing the schema in an RDBMS.
 
@@ -186,6 +197,8 @@ The output of this command looks as follows:
       system_traces |           True | {'class': 'org.apache.cassandra.locator.SimpleStrategy', 'replication_factor': '2'}
 ```
 
+> **What you should see:** The system keyspaces plus the newly created `movies` keyspace listed in the result table.
+
 ## Using "Static" Tables (skinny row)
 
 ### Create the Movie and Actor table
@@ -207,6 +220,9 @@ CREATE TABLE movies.movie (movie_id int,
 );
 ```
 
+> **What you should see:** No error message — the table is created silently.
+> **What just happened?** Cassandra tables require a PRIMARY KEY consisting of a partition key (here `movie_id`), which determines which node stores the data, and optional clustering columns that control the sort order within a partition.
+
 This creates a first static column family (table) in Cassandra. Now do the same for the Actor table.
 
 ```
@@ -220,6 +236,8 @@ CREATE TABLE movies.actor (actor_id int,
   PRIMARY KEY (actor_id)
 );
 ```
+
+> **What you should see:** No error message — the actor table is created silently.
 
 You can view a table metadata using the `DESCRIBE` command, as shown in the following statement
 
@@ -274,6 +292,9 @@ VALUES (0111257,
 		 'https://m.media-amazon.com/images/M/MV5BYjc0MjYyN2EtZGRhMy00NzJiLWI2Y2QtYzhiYTU3NzAxNzg4XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SY150_CR0,0,101,150_.jpg',
 		  null); 		
 ```
+
+> **What you should see:** No output on success — Cassandra INSERT does not return a confirmation message by default.
+> **What just happened?** Cassandra writes each row to the partition determined by the partition key (`movie_id`) and replicates it according to the keyspace replication factor.
 
 Now let's also add some actors playing in these 2 movies.
 
@@ -370,6 +391,8 @@ VALUES (0000233,
          'His films will often include one long, unbroken take where a character is  followed around somewhere.']);
 ```
 
+> **What you should see:** No output on success — Cassandra INSERT does not return a confirmation message by default.
+
 **Note:** In the case of Quentin Tarantino we have shortend the trade marks from the original.
 
 ### Displaying Data
@@ -381,12 +404,16 @@ SELECT movie_id, title
 FROM movies.movie;
 ```
 
+> **What you should see:** A result table with the `movie_id` and `title` columns for all movies currently stored.
+
 We can also select all columns as shown here for the Actor table:
 
 ```
 SELECT *
 FROM movies.actor;
 ```
+
+> **What you should see:** All rows and columns from the actor table returned in a result table.
 
 Result of previous SELECT queries may make you wonder, this looks so similar to RDBMS tables, is this how data is stored in Cassandra as well?
 
@@ -416,6 +443,8 @@ FROM movies.actor
 WHERE actor_id = 0000246;
 ```
 
+> **What you should see:** The row for Bruce Willis returned in the result table.
+
 As hinted in the exception, you can force Cassandra to execute a restriction on a non-primary column by adding the `ALLOW FILTERING` clause.
 
 ```
@@ -438,6 +467,9 @@ SET name = 'Bruce Walter Willis'
 WHERE actor_id = 0000246;
 ```
 
+> **What you should see:** No output.
+> **What just happened?** Cassandra UPDATE is actually an upsert — it creates the row if it doesn't exist, because Cassandra uses a log-structured storage engine (LSM tree) that appends writes rather than modifying data in place.
+
 Check the result with a `SELECT`.
 
 ```
@@ -445,6 +477,8 @@ SELECT *
 FROM movies.actor
 WHERE actor_id = 0000246;
 ```
+
+> **What you should see:** The actor row with the updated name `Bruce Walter Willis` returned in the result table.
 
 The same could have been achieved with the following insert, just updating the email to a different value to be able to see the result.
 
@@ -485,6 +519,9 @@ Let's remove the actor with ID 99999999 we have just inserted before with a `DEL
 DELETE FROM movies.actor
 WHERE actor_id = 99999999;
 ```
+
+> **What you should see:** No output.
+> **What just happened?** Cassandra marks the deleted data with a tombstone rather than immediately removing it; the actual removal happens during a background compaction process.
 
 Let's see  
 
@@ -532,6 +569,9 @@ CREATE TABLE movies.movies_by_actor (actor_id int,
 );
 ```
 
+> **What you should see:** No error — the table is created silently.
+> **What just happened?** Wide-row (dynamic) tables use composite keys where the partition key (`actor_id`) groups related rows together and the clustering column (`movie_id`) becomes part of the physical sort order on disk — enabling efficient range scans within a partition.
+
 We use a name which reflects the query we can resolve using that table.
 
 Now let's continue with the table to get the actors who have played in a given movie, which we call `actors_by_movie`
@@ -545,6 +585,8 @@ CREATE TABLE movies.actors_by_movie (movie_id int,
 				PRIMARY KEY (movie_id, actor_id)
 );
 ```
+
+> **What you should see:** No error — the table is created silently.
 
 ### Inserting data to the two tables
 
@@ -586,6 +628,9 @@ INSERT INTO movies.movies_by_actor (actor_id, movie_id, title)
 VALUES (0000113, 0111257, 'Speed');
 ```
 
+> **What you should see:** Data inserted without errors — no output is returned for successful INSERTs.
+> **What just happened?** Each insert writes a clustering row within the actor's partition. All movies for a given actor are stored together on the same node, ordered by `movie_id`, which makes retrieving all movies for an actor a single partition read.
+
 Now let's also add some data to the `actors_by_movie` table. Again, not all of the actors we add here are also stored in the `movie` table. In real-world of course they would have to be in sync and when inserting the data this would have been taken care off.
 
 ```
@@ -616,6 +661,8 @@ INSERT INTO movies.actors_by_movie (movie_id, title, actor_id, name)
 VALUES (0110912, 'Pulp Fiction', 0000246, 'Bruce Willis');
 ```
 
+> **What you should see:** Data inserted without errors — no output is returned for successful INSERTs.
+
 Now let's see these table in Action. First let's see all the movies "Bruce Willis" has played in.
 
 ```
@@ -624,6 +671,8 @@ FROM movies.movies_by_actor
 WHERE actor_id = 0000246;
 ```
 
+> **What you should see:** A result table listing the titles of all movies Bruce Willis has played in.
+
 And now let's see the actors which played in the movie "Pulp Fiction"
 
 ```
@@ -631,6 +680,8 @@ SELECT name, title
 FROM movies.actors_by_movie
 WHERE movie_id = 0110912;
 ```
+
+> **What you should see:** A result table listing the names and title for all actors who played in Pulp Fiction.
 
 ## Using Counter Columns
 
@@ -649,6 +700,8 @@ CREATE TABLE movies.rating_by_movie (movie_id int,
 				PRIMARY KEY (movie_id)
 );
 ```
+
+> **What you should see:** No error — the counter table is created silently.
 
 Let's add some ratings for the movie "Pulp Fiction". With columns of type counter you have to use the `UPDATE` command and you can't use an `INSERT`.
 
@@ -674,11 +727,16 @@ SET two_star = two_star + 1
 WHERE movie_id = 0110912;
 ```
 
+> **What you should see:** No output.
+> **What just happened?** Counter columns use a special CRDT-based data type — they can only be incremented or decremented, never set to an absolute value, to allow safe concurrent updates across replicas.
+
 Check the current ratings for movie "Pulp Fiction"
 
 ```
 SELECT * FROM movies.rating_by_movie WHERE movie_id = 0110912;
 ```
+
+> **What you should see:** The result table showing the accumulated counter values for each star rating of Pulp Fiction.
 
 Let's also create a table which counts the number of views per movie, separated by male and female viewers and per month.
 In this case we create a wide-row table, with `movie_id` for the partition key and `year` and `month` as the clustering key. Additionally we decided to store the clustering columns in descending order by year and month, so that the latest view counts can be retrieved efficiently.
@@ -693,6 +751,9 @@ CREATE TABLE movies.movie_viewed_by_time (movie_id int,
 				PRIMARY KEY (movie_id, year, month)
 ) WITH CLUSTERING ORDER BY (year DESC, month DESC);
 ```
+
+> **What you should see:** No error — the wide-row counter table is created silently.
+> **What just happened?** Wide-row tables use composite keys where the partition key (`movie_id`) groups related rows together and the clustering columns (`year`, `month`) become part of the physical sort order on disk — enabling efficient range scans.
 
 Add some sample values to the new table for movie Pulp Fiction
 
@@ -744,6 +805,9 @@ UPDATE movies.movie_viewed_by_time
 SET female = female + 1
 WHERE movie_id = 0110912 AND year = 2019 and month = 05;
 ```
+
+> **What you should see:** No output.
+> **What just happened?** Counter columns use a special CRDT-based data type — they can only be incremented or decremented, never set to an absolute value, to allow safe concurrent updates across replicas.
 
 Add some sample values to the new table for movie The Matrix
 
@@ -804,6 +868,9 @@ SET female = female + 1
 WHERE movie_id = 133093 AND year = 2019 and month = 05;
 ```
 
+> **What you should see:** No output.
+> **What just happened?** Counter columns use a special CRDT-based data type — they can only be incremented or decremented, never set to an absolute value, to allow safe concurrent updates across replicas.
+
 and see the views for the movie "Pulp Fiction" for all the time
 
 ```
@@ -811,6 +878,8 @@ SELECT *
 FROM movies.movie_viewed_by_time
 WHERE movie_id = 0110912;
 ```
+
+> **What you should see:** All view count rows for Pulp Fiction across all months, ordered from newest to oldest due to the `CLUSTERING ORDER BY (year DESC, month DESC)` setting.
 
 for just one month
 
@@ -820,6 +889,8 @@ FROM movies.movie_viewed_by_time
 WHERE movie_id = 0110912 AND year = 2019 AND month = 05;
 ```
 
+> **What you should see:** The single row with view counts for Pulp Fiction in May 2019.
+
 or for the month January to May
 
 ```
@@ -827,6 +898,8 @@ SELECT *
 FROM movies.movie_viewed_by_time
 WHERE movie_id = 0110912 AND year = 2019 AND month >= 01 AND month <= 5;
 ```
+
+> **What you should see:** The rows with view counts for Pulp Fiction for each month from January through May 2019.
 
 
 ## Using the Python API with Cassandra

@@ -61,6 +61,8 @@ For mongosh info see: https://docs.mongodb.com/mongodb-shell/
 test> 
 ```
 
+> **What you should see:** The `test>` prompt confirming a successful connection, along with the MongoDB server version (e.g. `Using MongoDB: 6.0.5`) and the Mongosh shell version (e.g. `Using Mongosh: 1.8.0`).
+
 You are now at the MongoDB command prompt, ready to execute any MongoDB statements. We can also see the version of the MongoDB server as well as of the MongoDB shell.
 
 The shell runs JavaScript. There are some global commands you can execute, like help or exit. Commands that you execute against the current database are executed against the db object, such as `db.help()` or `db.stats()`. 
@@ -82,6 +84,8 @@ The first one is [Mongo Express](https://github.com/mongo-express/mongo-express)
 In a browser window, navigate to <http://dataplatform:28123/> and you should directly arrive on the home screen as shown below. 
 
 ![Alt Image Text](./images/mongo-express-home.png "Mongo Express")
+
+> **What you should see:** The Mongo Express home screen listing all databases in the MongoDB instance (e.g. `admin`, `config`, `local`), with a navigation bar for browsing collections and documents.
 
 #### Admin Mongo (not installed)
 
@@ -158,6 +162,9 @@ First we’ll use the global use helper to switch databases, so go ahead and ent
 use filmdb
 ```
 
+> **What you should see:** `switched to db filmdb`
+> **What just happened?** MongoDB creates the database lazily — `filmdb` does not actually exist on disk yet and will not appear in `show dbs` until at least one document is inserted into one of its collections.
+
 It doesn’t matter that the database doesn’t really exist yet. The first collection that we create will also create the `filmdb` database. Now that you are inside a database, you can start issuing database commands, like `db.getCollectionNames()`. 
 
 ```
@@ -225,6 +232,9 @@ after executing the command, you should get back the following result, telling t
 }
 ```
 
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId`.
+> **What just happened?** MongoDB assigned an auto-generated `_id` of type `ObjectId` to the document because none was provided. Documents are stored internally as BSON (Binary JSON), which supports richer types than plain JSON — such as `ObjectId`, `Date`, and `BinData`.
+
 In the graphical tools, most of the time you only have to provide the JSON document, without having to specify the `db.movies.insertOne()` command. 
 
 The above line is executing insert against the **movies** collection, passing it a single parameter. Internally MongoDB uses a binary serialised JSON format called BSON. Externally, this means that we use JSON a lot, as is the case with our parameters. 
@@ -270,6 +280,9 @@ db.movies.insertOne (
 })
 ```
 
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "The Matrix".
+> **What just happened?** As before, MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `movies` collection.
+
 If we execute `db.getCollectionNames()` now, we should see the collection we have just added documents to
 
 ```
@@ -282,6 +295,8 @@ You can now use the `find` command against the **movies** collection to return a
 ```
 db.movies.find()
 ```
+
+> **What you should see:** All documents in the `movies` collection printed as JSON objects, including the `_id`, `title`, `year`, `genres`, and all other stored fields.
 
 In fact what we are executing is actually this statement.
 
@@ -339,6 +354,9 @@ db.persons.insertOne (
 })
 ```
 
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Bruce Willis".
+> **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
+
 then add the actor "Keanu Reeves"
 
 ```
@@ -359,6 +377,9 @@ db.persons.insertOne (
 })
 ```
 
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Keanu Reeves".
+> **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
+
 followed by the actress "Sandra Bullock"
 
 ```
@@ -376,6 +397,9 @@ db.persons.insertOne (
     ]        
 })
 ```
+
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Sandra Bullock".
+> **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
 
 and finally we also add "Quentin Tarantino"
 
@@ -404,11 +428,16 @@ db.persons.insertOne (
 })
 ```
 
+> **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Quentin Tarantino".
+> **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
+
 So now let's also check that we have all 4 persons added to the collection
 
 ```
 db.persons.find()
 ```
+
+> **What you should see:** All 4 documents in the `persons` collection printed as JSON objects, each containing `_id`, `name`, `birthDate`, `actedInMovies`, and any other stored fields.
 
 We can also use the `countDocuments()` method to return the number of documents within the collection. 
 
@@ -535,7 +564,10 @@ After executing the multi insert, we can check that we have in fact 50 movies in
 > db.movies.find().count()
 50 
 ```
- 
+
+> **What you should see:** The number `50`, confirming that all documents (the 2 full-detail movies inserted earlier plus the 48 just added) are now in the `movies` collection.
+> **What just happened?** `insertMany` inserted all 48 documents in a single operation. MongoDB assigned an auto-generated `ObjectId` `_id` to each document and stored them as BSON. Because the new documents contain fewer fields than the earlier ones, this also demonstrates MongoDB's schema-less nature.
+
 Now that we have data, we can master selectors. `{field: value}` is used to find any documents where field is equal to value. `{field1: value1, field2: value2}` is how we can combine them with **and** semantic. 
 The special `$lt`, `$lte`, `$gt`, `$gte` and `$ne` are used for less than, less than or equal, greater than, greater than or equal and not equal operations. 
 
@@ -545,11 +577,15 @@ To get all Family movies, we can perform
 db.movies.find({"genres": "Family"})
 ```
 
+> **What you should see:** The matching documents printed as JSON — all movies whose `genres` array contains `"Family"`.
+
 If we want get all movies that have been published in 2010 and after, we could do:
 
 ```
 db.movies.find({"genres":"Action", "year": { $gte :  2010 } })
 ```
+
+> **What you should see:** The matching documents printed as JSON — all Action movies released in 2010 or later.
 
 To find all movies which are **not** of genre **Drama**
 
@@ -557,11 +593,15 @@ To find all movies which are **not** of genre **Drama**
 db.movies.find({"genres": { $ne: "Drama"} })
 ```
 
+> **What you should see:** The matching documents printed as JSON — all movies whose `genres` array does not contain `"Drama"`.
+
 The `$exists` operator can be used for matching the presence or absence of a field
 
 ```
 db.movies.find({ "plotOutline": { $exists: true} })
 ```
+
+> **What you should see:** The matching documents printed as JSON — only the movies that have the `plotOutline` field (the two full-detail movies inserted first).
 
 we can see that only two movies have the `plotOutline` property set. 
 
@@ -570,6 +610,8 @@ The `$in` operator can be used for matching one of several values that we pass a
 ```
 db.movies.find({ "genres": { $in: ['Family', 'Mistery']} })
 ```
+
+> **What you should see:** The matching documents printed as JSON — all movies in either the `Family` or `Mistery` genre.
 
 which returns all movies in either the `Family` or `Mistery` genre.
 
@@ -581,11 +623,15 @@ To find all movies of genre *Music* **OR** which have been published *2012* or l
 db.movies.find({ $or: [ { "genres":"Music" },  { "year": { $gte :  2012 } } ] })
 ```
 
+> **What you should see:** The matching documents printed as JSON — all movies in the `Music` genre or released in 2012 or later.
+
 To find all movies of genre *Action* **AND** which have been published *2010* or later **OR** have a rating later than *8.8*
 
 ```
 db.movies.find({ "genres":"Action", $or: [ { "year": { $gte :  2010 } },  { "rating": { $gt :  8.8 } } ] })
 ```
+
+> **What you should see:** The matching documents printed as JSON — all Action movies that were either released in 2010 or later, or have a rating greater than 8.8.
 
 There’s something pretty neat going on in our last two examples. You might have already noticed, but the `genres` field is an array. MongoDB supports arrays as first class objects. This is an incredibly handy feature. Once you start using it, you wonder how you ever lived without it. What’s more interesting is how easy selecting based on an array value is: `{ genres: 'Action' }` will return any document where genres has a value of `Action`.
 
@@ -609,6 +655,9 @@ In its simplest form, `updateOne()` takes two parameters: the selector (where) t
 db.movies.updateOne ( {title: 'Fight Club'} , { $set: {rating: 9} } )
 ```
 
+> **What you should see:** A result object with `matchedCount: 1` and `modifiedCount: 1`, confirming that the document was found and the `rating` field was updated.
+> **What just happened?** MongoDB's `$set` operator only changed the `rating` field — all other fields in the document were preserved exactly as they were. This is unlike a SQL UPDATE which replaces the specified columns but leaves the row structure fixed; with `$set` only the named fields are touched.
+
 In addition to `$set`, we can leverage other operators to do some nifty things. All update operators work on fields - so your entire document won’t be wiped out. For example, the `$inc` operator is used to increment a field by a certain positive or negative amount. 
 
 If we want to increase the votes for the movie "The Matrix", which is currently set to `1496538` as we can easily see using a find
@@ -624,16 +673,24 @@ db.movies.find( {title: 'The Matrix'}, {"votes":1})
 { "_id" : ObjectId("5ccffa52aff86ec587e35faa"), "votes" : 1496538 }
 ```
 
+> **What you should see:** A single document with only the `_id` and `votes` fields returned — the projection has excluded all other fields.
+
 we can execute the following update
 
 ```
 db.movies.updateOne( {title: 'The Matrix'} , { $inc: {votes: 1} } )
 ```
+
+> **What you should see:** A result object with `matchedCount: 1` and `modifiedCount: 1`, confirming that the `votes` field was incremented.
+> **What just happened?** The `$inc` operator added `1` to the existing `votes` value atomically, leaving all other fields untouched.
+
 check the new result using the same find as above a 2nd time
 
 ```
 db.movies.find( {title: 'The Matrix'}, {"votes":1})
 ```
+
+> **What you should see:** A single document showing only `_id` and `votes`, now with the value incremented by 1 (e.g. `1496539`).
 
 ## Performance Optimizations using Indexes
 
@@ -642,6 +699,9 @@ Indexes in MongoDB work a lot like indexes in a relational database: they help i
 ```
 db.movies.createIndex( {title: 1} );
 ```
+
+> **What you should see:** A confirmation string such as `title_1`, which is the name MongoDB assigned to the new index.
+> **What just happened?** MongoDB built a B-tree index on the `title` field in ascending order. Queries that filter or sort by `title` will now use this index instead of scanning every document in the collection.
 
 if we know execute a query on the tile, the index will be used
 
@@ -706,6 +766,9 @@ Adding the `explain` method at the end of the find statement will return the fol
 }
 ```
 
+> **What you should see:** Execution plan details including `winningPlan` with a stage of `IXSCAN` (index scan) referencing `title_1`, confirming the index is being used.
+> **What just happened?** `explain()` shows the query execution plan chosen by MongoDB's query optimiser. An `IXSCAN` stage means the index was used, while a `COLLSCAN` would mean a full collection scan. The plan also shows how many documents were examined versus returned, helping you identify inefficient queries.
+
 We can see that the `winningPlan` uses the `title_1` index. 
 
 A unique index can be created by supplying a second parameter and setting `unique` to true. Let's add an index on the `id` field to ensure that it is unique. 
@@ -713,6 +776,9 @@ A unique index can be created by supplying a second parameter and setting `uniqu
 ```
 db.movies.createIndex( {id: 1}, {unique: true} );
 ```
+
+> **What you should see:** A confirmation string such as `id_1`, which is the name MongoDB assigned to the new unique index.
+> **What just happened?** MongoDB built a B-tree index on the `id` field with a uniqueness constraint. Any future attempt to insert a document with a duplicate `id` value will be rejected with a duplicate key error.
 
 If we now try to add one of the movies a 2nd time we get an error:
 
@@ -756,6 +822,9 @@ For example you can run the following in a mongo shell to allow text search over
 ```
 db.movies.createIndex ( { title: "text", plotOutline: "text" } )
 ```
+
+> **What you should see:** A confirmation string such as `title_text_plotOutline_text`, which is the name MongoDB assigned to the new text index.
+> **What just happened?** MongoDB built an inverted text index that tokenises, stems, and indexes all string values in the `title` and `plotOutline` fields. This enables full-text search with relevance scoring using the `$text` operator.
 
 Now let's to a text search for the term "fight"
 
@@ -817,11 +886,15 @@ db.movies.find( { $text: { $search: "fight" } } )
 ]
 ```
 
+> **What you should see:** Documents whose `title` or `plotOutline` fields contain the word "fight" — in this case "Fight Club" (matched in the title) and "Pulp Fiction" (matched in the plot outline where the word "fight" appears).
+
 If we change the term to `fight terrorist` we can see that the search string will be tokenized into `fight` and `terrorist` and all the movies will be returned matching either of the two terms in the `title` or the `plotOutline` field. 
 
 ```
 db.movies.find( { $text: { $search: "fight terrorist" } } )
 ```
+
+> **What you should see:** Documents whose `title` or `plotOutline` fields contain the word "fight" or "terrorist" — "Fight Club", "Pulp Fiction", and "The Matrix" (which uses the word "terrorist" in its plot outline).
 
 Therefore we will also get back a 3rd movie, the movie "The Matrix" which uses the word Terrorist in the plot outline.
 
@@ -834,6 +907,9 @@ The simplest aggregation you are probably already familiar with is the SQL group
 ```
 db.movies.aggregate( [{$group:{_id:'$rating', total: { $sum:1 }}}]) 
 ```
+
+> **What you should see:** The aggregated result documents — one document per distinct `rating` value, each with an `_id` (the rating) and a `total` (the count of movies with that rating).
+> **What just happened?** MongoDB's aggregation pipeline processed all documents through a single `$group` stage that grouped them by the `rating` field and summed up the count for each group, similar to a SQL `GROUP BY rating` with `COUNT(*)`.
 
 In the shell we have the aggregate helper which takes an array of pipeline operators. For a simple count grouped by something, we only need one such operator and it’s called `$group`. This is the exact analog of GROUP BY in SQL where we create a new document with `_id` field indicating what field we are grouping by (here it’s rating) and other fields usually getting assigned results of some aggregation, in this case we `$sum 1` for each document that matches a particular rating. You probably noticed that the `_id` field was assigned `$rating` and not only `rating` - the `$` before a field name indicates that the value of this field from incoming document will be substituted.
 
@@ -961,6 +1037,9 @@ Execution should return the following result
 ]
 ```
 
+> **What you should see:** The aggregated result documents — one document per genre (for movies released after 2000), each showing the genre name, the number of movies, and the minimum, maximum, and average rating, sorted by the number of movies in descending order.
+> **What just happened?** MongoDB's aggregation pipeline processed documents through a series of stages: `$match` filtered to movies released after 2000, `$unwind` flattened each movie's `genres` array into separate documents, `$group` grouped by genre while computing count and rating statistics, and `$sort` ordered the results by movie count descending. Each stage transforms the stream of documents passed to the next stage.
+
 There is another powerful pipeline operator called `$project` (analogous to the projection we can specify to the find command) which allows you not just to include certain fields, but to create or calculate new fields based on values in existing fields. For example, you can use math operators to add together values of several fields before finding out the average, or you can use string operators to create a new field that’s a concatenation of some existing fields.
 
 This just barely scratches the surface of what you can do with aggregations. Consult the [MongoDB's documentation](https://docs.mongodb.com/manual/core/aggregation-pipeline/index.html) to read more about Aggregation Pipelines.  
@@ -982,6 +1061,8 @@ The result will show how many documents have been removed:
 { acknowledged: true, deletedCount: 1 }
 ```
 
+> **What you should see:** A result object with `deletedCount: 1`, confirming that exactly one document was removed.
+
 We can see that as expected, one movie has been removed. 
 
 We can easily also remove the rest of the additional movies we have added before with the following command, specifying to remove all documents where there is no `plotOutline` field. 
@@ -989,4 +1070,6 @@ We can easily also remove the rest of the additional movies we have added before
 ```
 db.movies.deleteMany( { "plotOutline": { $exists: false} } )
 ```
+
+> **What you should see:** A result object with `deletedCount` equal to the number of documents that had no `plotOutline` field — the 48 minimal movie documents inserted with `insertMany`.
 

@@ -52,6 +52,8 @@ You can use any of the above scenario names as a parameter to run the scenario.
 ~/w/platys-datahub>
 ```
 
+> **What you should see:** a table of four built-in scenarios including `smart_home`
+
 we will be using the `smart_home` scenario. 
 
 To run it, use the `simulate` option and specify with `conn` the MQTT broker to connect to. We are running `mosquitto` as part of the platform and this is the one we are connecting to.
@@ -59,6 +61,8 @@ To run it, use the `simulate` option and specify with `conn` the MQTT broker to 
 ```bash
 docker exec -ti mqttx-cli mqttx simulate -sc smart_home -c 100 conn  -h 'mosquitto-1' -p 1883
 ```
+
+> **What you should see:** the simulator runs silently; messages are being published to the `mqttx/simulate/#` topic at regular intervals
 
 ## Using an MQTT Client to view messages
 
@@ -81,11 +85,15 @@ The consumed messages will show up on the terminal window as shown below.
 
 ![](./images/mosquitto-sub.png)
 
+> **What you should see:** a continuous stream of single-line JSON messages appearing in the terminal, one per simulated home per interval
+
 ## Using HiveMQ Web UI
 
 To start consuming using the MQTT UI (HiveMQ Web UI), navigate to <http://dataplatform:28136> and connect using `dataplatform` for the Host field, `9101` for the Port field
 
 ![](./images/hiveMQ-1.png)
+
+> **What you should see:** the HiveMQ Web Client login form
 
 and click on Connect to connect to the broker.
 
@@ -93,9 +101,13 @@ When successfully connected, click on Add New Topic Subscription and enter `mqtt
 
 ![](./images/hiveMQ-2.png)
 
+> **What you should see:** a topic subscription dialog with `mqttx/simulate/#` entered
+
 and click Subscribe:
 
 ![](./images/hiveMQ-3.png)
+
+> **What you should see:** messages flowing in the subscriptions panel in real time
 
 You should again see the messages as they are being sent to MQTT.
 
@@ -155,6 +167,9 @@ if we "pretty-print" it then it is more visible
 }
 ```
 
+> **What you should see:** one message per home containing a `rooms` array with per-room sensor readings.
+> **What just happened?** the `smart_home` simulator generates one JSON message per home per interval, with nested room-level sensor data for temperature, humidity, and appliance states
+
 We can see that one message of the `smart_home` simulator contains messages for one home with multiple rooms, each providing `temperature`, `humidity` and some other metrics. 
 
 Let's use Telegraf to retrieve them from MQTT and store it in InfluxDB. 
@@ -173,6 +188,8 @@ Telegraf is running as part of the dataplatform, but if you check the logs using
 2026-04-12T11:54:11Z E! [agent] Error writing to outputs.influxdb_v3: failed to write metric to demo-db (401 Unauthorized): the request was not authenticated
 ```
 
+> **What you should see:** repeated `401 Unauthorized` errors confirming Telegraf cannot write without a valid token
+
 Let's use the influxdb3 CLI with the `--admin` option to create an operator token:
 
 ```bash
@@ -189,6 +206,9 @@ HTTP Requests Header: Authorization: Bearer apiv3_FBiA8QmpreTRyfkSwjfnI07NfmbNyE
 
 IMPORTANT: Store this token securely, as it will not be shown again.
 ```
+
+> **What you should see:** a newly generated token string starting with `apiv3_`.
+> **What just happened?** an operator-level token was created in InfluxDB 3.x — this token has full admin access and must be stored securely as it is shown only once
 
 Navigate to the docker folder
 
@@ -207,6 +227,8 @@ Stop and remove the existing `telegraf` container and recreate it
 ```bash
 docker stop telegraf && docker rm telegraf && docker compose up -d telegraf
 ```
+
+> **What you should see:** Docker pulls nothing (image is cached), recreates the container, and the new telegraf starts
 
 A `docker logs -f telegraf` should show no more errors:
 
@@ -233,6 +255,9 @@ A `docker logs -f telegraf` should show no more errors:
 2026-04-12T12:13:50Z D! [outputs.influxdb_v3] Wrote batch of 1 metrics in 91.645953ms
 2026-04-12T12:13:50Z D! [outputs.influxdb_v3] Buffer fullness: 1 / 10000 metrics
 ```
+
+> **What you should see:** log lines showing `Successfully connected to outputs.influxdb_v3` and periodic `Wrote batch of 1 metrics` lines with no errors.
+> **What just happened?** Telegraf re-read the `.env` file containing the token and can now authenticate with InfluxDB 3.x
 
 ## Using Telegraf to retrieve values from MQTT and store in InfluxDB
 
@@ -452,6 +477,9 @@ You should see an output similar to the one below
 2026-04-12T12:18:06Z D! [outputs.influxdb_v3] Wrote batch of 1000 metrics in 446.073468ms
 ```
 
+> **What you should see:** Telegraf loads the new config, connects to `mosquitto-1:1883`, and immediately starts writing batches of 1000 metrics.
+> **What just happened?** Telegraf's MQTT consumer subscribed to `mqttx/simulate/#`, parsed the JSON payload using the `json_v2` format, extracted the room objects as individual metrics named `smart_home`, and forwarded them to InfluxDB 3.x using the `influxdb_v3` output plugin
+
 Because debug is enabled in the `telegraf.conf` we see additional output whenever data is flushed to InfluxDB.
 
 ## Querying Data with the InfluxDB 3.x CLI
@@ -483,6 +511,8 @@ You should see `demo-db` listed, which is the database Telegraf has been writing
 | demo-db       |
 +---------------+
 ```
+
+> **What you should see:** a table listing `demo-db` and `_internal`
 
 ### List tables in the database
 
@@ -520,6 +550,8 @@ You should see `smart_home` listed — the measurement name we configured in `te
 +---------------+--------------------+-------------------------------------+------------+
 ````
 
+> **What you should see:** a table listing `mock` and `smart_home` under `iox` schema, plus system tables
+
 ### Query the raw data
 
 Retrieve the 10 most recent rows from the `smart_home` measurement:
@@ -550,6 +582,9 @@ The output will look similar to this:
 +-------------------------+--------------------------------------+----------------------+-------------+-------------+----------+
 ```
 
+> **What you should see:** rows with columns `time`, `id`, `owner`, `room_type`, `temperature`, `humidity` — one row per room per home per interval, most recent first.
+> **What just happened?** InfluxDB 3.x stored each Telegraf metric as a row in the `smart_home` table, with tags (`id`, `owner`, `room_type`) as indexed columns and fields (`temperature`, `humidity`, etc.) as regular columns
+
 ### Filter by room type
 
 Use a `WHERE` clause to restrict results to a specific room type:
@@ -578,6 +613,8 @@ docker exec -ti influxdb3 influxdb3 query \
 +-------------------------+--------------------------------------+----------------------+-------------+----------+
 ```
 
+> **What you should see:** only rows where `room_type = 'living room'`
+
 ### Aggregate by room type
 
 Calculate the average temperature and humidity across all homes, grouped by room type:
@@ -602,6 +639,9 @@ You should see output similar to:
 +-------------+--------------------+--------------------+
 ```
 
+> **What you should see:** one row per room type with averaged temperature and humidity.
+> **What just happened?** InfluxDB 3.x executed the SQL aggregation natively — it supports standard SQL GROUP BY with aggregate functions like AVG, COUNT, MIN, MAX directly on the time-series data
+
 ### Filter by time range
 
 InfluxDB 3.x supports standard SQL interval expressions for time-based filtering. To retrieve data from the last 5 minutes:
@@ -612,6 +652,8 @@ docker exec -ti influxdb3 influxdb3 query \
   --database demo-db \
   "SELECT time, id, room_type, temperature, humidity FROM smart_home WHERE time >= now() - interval '5 minutes' ORDER BY time DESC"
 ```
+
+> **What you should see:** only rows from the last 5 minutes, sorted most-recent first
 
 ### Count records per home
 
@@ -634,6 +676,8 @@ In a browser window, navigate to <http://dataplatform:28264>.
 
 ![](./images/influxdb-explorer-1.png)
 
+> **What you should see:** the InfluxDB Explorer home screen with a "Connect Your First Server" button
+
 ### Create a server connection
 
 Click on the **Connect Your First Server** button and enter the following values (make sure to replace the token with the one you have generated before):
@@ -644,15 +688,22 @@ Click on the **Connect Your First Server** button and enter the following values
 
 ![](./images/influxdb-explorer-2.png)
 
+> **What you should see:** the server connection form with Name, URL, and Token fields
+
 and then click on **Add Server**. The new server will show up on the main screen. 
 
 ![](./images/influxdb-explorer-3.png)
+
+> **What you should see:** the new `demo` server listed on the home screen.
+> **What just happened?** Explorer saved the server connection including the token; it will now route all queries to `http://influxdb3:8181` authenticated with that token
 
 ### Select the database
 
 In the menu on the left navigate to **Query Data** | **Data Explorer** and select `demo-db` in the **Schema** drop-down. 
 
 ![](./images/influxdb-explorer-4.png)
+
+> **What you should see:** the Data Explorer view with `demo-db` selected in the schema dropdown
 
 This is the database that Telegraf has been writing the `smart_home` data into.
 
@@ -661,6 +712,8 @@ This is the database that Telegraf has been writing the `smart_home` data into.
 On the left-hand panel you will see all tables available in the selected database. Click on **smart_home** to expand it and inspect its columns — you should see the tags (`id`, `owner`, `room_type`) and fields (`temperature`, `humidity`, `lights_on`, etc.) that were mapped from the MQTT JSON payload by Telegraf.
 
 ![](./images/influxdb-explorer-5.png)
+
+> **What you should see:** the `smart_home` table expanded showing its columns with their data types — tags and fields distinguished
 
 ### Run a query
 
@@ -676,6 +729,8 @@ LIMIT 10
 Click **Run** (or press **Ctrl+Enter**) to execute. The results appear in a table below the editor.
 
 ![](./images/influxdb-explorer-6.png)
+
+> **What you should see:** a results table with time-ordered rows of sensor readings
 
 ### Aggregate by room type
 
@@ -706,4 +761,6 @@ ORDER BY time DESC
 After running a query that returns numeric columns over time, switch from the **Table** view to the **Line** view using the toggle above the results. This renders the data as a time-series line chart, which is especially useful for spotting trends in temperature or humidity over time.
 
 ![](./images/influxdb-explorer-7.png)
+
+> **What you should see:** a line chart with one line per `room_type`, showing temperature or the selected metric over time
 
