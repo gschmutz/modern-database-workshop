@@ -8,6 +8,18 @@ For this workshop we will be using an IoT device/sensor simulator available via 
 
 ![](./images/architecture.png)
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Running the Simulator and publish to MQTT](#running-the-simulator-and-publish-to-mqtt)
+- [Using an MQTT Client to view messages](#using-an-mqtt-client-to-view-messages)
+- [Using HiveMQ Web UI](#using-hivemq-web-ui)
+- [Configure Telegraf with a access token](#configure-telegraf-with-a-access-token)
+- [Using Telegraf to retrieve values from MQTT and store in InfluxDB](#using-telegraf-to-retrieve-values-from-mqtt-and-store-in-influxdb)
+- [Querying Data with the InfluxDB 3.x CLI](#querying-data-with-the-influxdb-3x-cli)
+- [Querying Data with the InfluxDB Explorer UI](#querying-data-with-the-influxdb-explorer-ui)
+
 ## What you will learn
 
 - How to simulate IoT sensor data using the MQTTX CLI `smart_home` scenario

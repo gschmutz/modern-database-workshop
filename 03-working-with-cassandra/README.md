@@ -3,6 +3,17 @@ In this workshop we will learn how to use the Apache Cassandra NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible.
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Connecting to the Cassandra environment](#connecting-to-the-cassandra-environment)
+- [Create a Keyspace for the Movie sample](#create-a-keyspace-for-the-movie-sample)
+- [Using "Static" Tables (skinny row)](#using-static-tables-skinny-row)
+- [Using "Dynamic" Tables (wide row)](#using-dynamic-tables-wide-row)
+- [Using Counter Columns](#using-counter-columns)
+- [Using the Python API with Cassandra](#using-the-python-api-with-cassandra)
+
 ## What you will learn
 
 - How to connect to Cassandra using the `cqlsh` command-line utility and a browser-based GUI

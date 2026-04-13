@@ -6,6 +6,15 @@ We assume that the platform described [here](../01-environment/README.md) is run
 
 In this workshop you learn how to load RDF data into GraphDB and then use the SPARQL query language to query the data.
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Background: RDF and Turtle format](#background-rdf-and-turtle-format)
+- [Loading RDF data](#loading-rdf-data)
+- [Exploring the graph](#exploring-the-graph)
+- [Querying the graph using SPARQL](#querying-the-graph-using-sparql)
+
 ## What you will learn
 
 - How to create a repository in GraphDB Workbench

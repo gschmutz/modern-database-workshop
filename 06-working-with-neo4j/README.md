@@ -6,6 +6,15 @@ We assume that the platform described [here](../01-environment/README.md) is run
 
 In this workshop you learn how to use Neo4J for querying, visualisation, and data interaction. [Neo4J Browser](https://neo4j.com/developer/guide-neo4j-browser/) is part of Neo4J and offers a browser-based interface for adding data, running queries, creating relationships, and more. It also provides an easy way to visualise the data in the database.
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Connecting to the Cypher Shell (optional)](#connecting-to-the-cypher-shell-optional)
+- [Connecting with Neo4J Browser](#connecting-with-neo4j-browser)
+- [Loading the Movie Graph](#loading-the-movie-graph)
+- [Example Queries](#example-queries)
+
 ## What you will learn
 
 - How to connect to Neo4J using the Cypher Shell and the Neo4J Browser

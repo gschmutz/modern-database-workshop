@@ -2,6 +2,19 @@
 
 In this workshop we will learn how to use **Qdrant**, an AI-native vector database purpose-built for high-performance similarity search. We will use the Qdrant Dashboard, its REST API, and the official Python client from Jupyter to store and search vector embeddings.
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Background: Vector Databases and Embeddings](#background-vector-databases-and-embeddings)
+- [Accessing the Qdrant Dashboard](#accessing-the-qdrant-dashboard)
+- [Working with Collections](#working-with-collections)
+- [Inserting Points](#inserting-points)
+- [Vector Similarity Search](#vector-similarity-search)
+- [Filtered Similarity Search](#filtered-similarity-search)
+- [Updating and Deleting Points](#updating-and-deleting-points)
+- [Working with Qdrant from Python](#working-with-qdrant-from-python)
+
 ## What you will learn
 
 - How vector databases differ from traditional NoSQL stores

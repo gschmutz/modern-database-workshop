@@ -4,6 +4,17 @@ In this workshop we will learn how to use the Elasticsearch NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible. 
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Connecting to the Elasticsearch environment](#connecting-to-the-elasticsearch-environment)
+- [Create a Mapping](#create-a-mapping)
+- [Insert, Update and Delete Operations](#insert-update-and-delete-operations)
+- [Let's add a few movies](#lets-add-a-few-movies)
+- [Analysers](#analysers)
+- [Searching in Elasticsearch](#searching-in-elasticsearch)
+
 ## What you will learn
 
 - How to connect to Elasticsearch via its REST API and browser-based GUIs

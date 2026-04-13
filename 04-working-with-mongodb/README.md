@@ -4,6 +4,21 @@ In this workshop we will learn how to use the MongoDB NoSQL database.
 
 We assume that the platform described [here](../01-environment) is running and accessible. 
 
+## Table of Contents
+
+- [What you will learn](#what-you-will-learn)
+- [Prerequisites](#prerequisites)
+- [Connecting to the MongoDB environment](#connecting-to-the-mongodb-environment)
+- [Working with MongoDB](#working-with-mongodb)
+- [Creating Movie documents in the `movies` collection](#creating-movie-documents-in-the-movies-collection)
+- [Creating Actor documents in the `persons` collection](#creating-actor-documents-in-the-persons-collection)
+- [Querying Documents using a Query Selector](#querying-documents-using-a-query-selector)
+- [Updating Documents](#updating-documents)
+- [Performance Optimizations using Indexes](#performance-optimizations-using-indexes)
+- [Text Search](#text-search)
+- [Aggregating Data](#aggregating-data)
+- [Removing Documents](#removing-documents)
+
 ## What you will learn
 
 - How to connect to MongoDB using the `mongosh` command-line utility and browser-based GUIs
