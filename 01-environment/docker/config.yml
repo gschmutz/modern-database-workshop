@@ -876,7 +876,7 @@
       # a space separated list of python packages
       JUPYTER_python_packages: ''
       # the token to use, if empty a random token is generated
-      JUPYTER_token: ''
+      JUPYTER_token: 'abc123!'
       JUPYTER_nb_user: ''
       JUPYTER_upload_data_transfer_to_workspace_enabled: false
       JUPYTER_volume_map_data: false
@@ -1483,7 +1483,7 @@
       #
       # ===== Qdrant (VectorDB) ========
       #
-      QDRANT_enable: false
+      QDRANT_enable: true
       QDRANT_volume_map_data: false
       #
       # ===== Weaviate (VectorDB) ========

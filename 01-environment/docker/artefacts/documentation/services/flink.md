@@ -13,7 +13,7 @@ platys gen
 
 ## How to use it?
 
-Navigate to <http://127.0.0.1:28237>
+Navigate to <http://192.168.1.112:28237>
 
 To connect to the CLI use 
 

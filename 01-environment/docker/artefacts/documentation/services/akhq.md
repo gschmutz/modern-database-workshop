@@ -13,16 +13,16 @@ platys gen
 
 ## How to use it?
 
-Navigate to <http://127.0.0.1:28107>.
+Navigate to <http://192.168.1.112:28107>.
 If authentication is enabled, login with user `admin` and password `abc123!`.
 
-To use the REST API <http://127.0.0.1:28107/api> (see <https://akhq.io/docs/api.html>)
+To use the REST API <http://192.168.1.112:28107/api> (see <https://akhq.io/docs/api.html>)
 
 
 ### Monitoring API
   
-  * <http://127.0.0.1:28320/info>  
-  * <http://127.0.0.1:28320/health>
-  * <http://127.0.0.1:28320/loggers>
-  * <http://127.0.0.1:28320/metrics>
-  * <http://127.0.0.1:28320/prometheus>
+  * <http://192.168.1.112:28320/info>  
+  * <http://192.168.1.112:28320/health>
+  * <http://192.168.1.112:28320/loggers>
+  * <http://192.168.1.112:28320/metrics>
+  * <http://192.168.1.112:28320/prometheus>

@@ -26,7 +26,7 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: "'yes'"
       GRANT_SUDO: "'yes'"
-      JUPYTER_TOKEN: ${PLATYS_JUPYTER_TOKEN:-<token undefined>}
+      JUPYTER_TOKEN: ${PLATYS_JUPYTER_TOKEN:-abc123!}
       DOCKER_STACKS_JUPYTER_CMD: lab
       MAVEN_DOWNLOAD_JARS: com.amazonaws:aws-java-sdk-bundle:1.12.262,org.apache.hadoop:hadoop-aws:3.3.4,com.google.guava:guava:27.1-jre,software.amazon.awssdk:bundle:2.27.1
       # remove some JARS if they are conflicting with the ones installed above
@@ -42,11 +42,6 @@ services:
       - bash
       - -c
       - |
-        conda create -y --name py312 python=3.12.8
-        source /opt/conda/etc/profile.d/conda.sh
-        conda activate py312
-        pip install ipykernel    
-        python -m ipykernel install --user --name py312 --display-name "Python 3.12.8 (ipykernel)"
         start-notebook.sh
     restart: unless-stopped
   #  ================================== Redis ========================================== #
@@ -431,6 +426,26 @@ services:
     volumes:
       - ./data-transfer:/data-transfer
       - ./conf/influxdb3-explorer:/app-root/config:ro
+    restart: unless-stopped
+  #  ================================== Qdrant VectorDB ========================================== #
+  qdrant:
+    image: qdrant/qdrant:v1.17
+    container_name: qdrant
+    hostname: qdrant
+    labels:
+      com.platys.name: qdrant
+      com.platys.description: AI-native vector database
+      com.platys.webui.title: Qdrant UI
+      com.platys.webui.url: http://dataplatform:6333/dashboard
+      com.platys.restapi.title: Qdrant API
+      com.platys.restapi.url: http://dataplatform:6333
+    ports:
+      - 6333:6333
+      - 6334:6334
+    environment:
+      IS_PERSISTENT: true
+    volumes:
+      - ./data-transfer:/data-transfer
     restart: unless-stopped
   #  ================================== DbGate ========================================== #
   dbgate:
