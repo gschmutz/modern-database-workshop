@@ -44,8 +44,6 @@ Open a browser and navigate to <http://dataplatform:6333/dashboard>.
 
 ![Qdrant Dashboard](./images/qdrant-dashboard-1.png)
 
-> **What you should see:** The Qdrant web UI showing a list of collections (empty on first run) and cluster health information in the sidebar.
-
 The Dashboard lets you browse collections, inspect individual points, and run ad-hoc searches — all without writing any code.
 
 ## Working with Collections
@@ -94,7 +92,7 @@ curl http://dataplatform:6333/collections
 ### Inspect the collection
 
 ```bash
-curl http://dataplatform:6333/collections/databases
+curl http://dataplatform:6333/collections/databases | jq
 ```
 
 ```json
@@ -102,21 +100,52 @@ curl http://dataplatform:6333/collections/databases
   "result": {
     "status": "green",
     "optimizer_status": "ok",
-    "vectors_count": 0,
     "indexed_vectors_count": 0,
     "points_count": 0,
-    "segments_count": 1,
+    "segments_count": 5,
     "config": {
       "params": {
         "vectors": {
           "size": 4,
           "distance": "Cosine"
-        }
-      }
+        },
+        "shard_number": 1,
+        "replication_factor": 1,
+        "write_consistency_factor": 1,
+        "on_disk_payload": true
+      },
+      "hnsw_config": {
+        "m": 16,
+        "ef_construct": 100,
+        "full_scan_threshold": 10000,
+        "max_indexing_threads": 0,
+        "on_disk": false
+      },
+      "optimizer_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 1000,
+        "default_segment_number": 0,
+        "max_segment_size": null,
+        "memmap_threshold": null,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": null,
+        "prevent_unoptimized": null
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0,
+        "wal_retain_closed": 1
+      },
+      "quantization_config": null
+    },
+    "payload_schema": {},
+    "update_queue": {
+      "length": 0
     }
   },
   "status": "ok",
-  "time": 0.002
+  "time": 0.001559779
 }
 ```
 
