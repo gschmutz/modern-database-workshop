@@ -1,4 +1,4 @@
-# Working with MongoDB
+# Getting started with MongoDB
 
 In this workshop we will learn how to use the MongoDB NoSQL database.
 
