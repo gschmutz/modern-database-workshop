@@ -18,6 +18,7 @@
 |[mqtt-ui](./documentation/services/hivemq-ui )|<http://192.168.1.112:28136>|
 |[mqttx-cli](./documentation/services/mqttx )||
 |[neo4j-1](./documentation/services/neo4j )|<http://192.168.1.112:7474>|
+|[postgresql](./documentation/services/postgresql )||
 |[qdrant](./documentation/services/qdrant )|<http://192.168.1.112:6333/dashboard>|<http://192.168.1.112:6333>
 |[redis-1](./documentation/services/redis )||
 |[redis-commander](./documentation/services/redis-commander )|<http://192.168.1.112:28119>|

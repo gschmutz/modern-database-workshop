@@ -18,6 +18,7 @@
 |[mqtt-ui](./documentation/services/hivemq-ui )|[Web UI](http://192.168.1.112:28136)|28136<br>|80<br>|MQTT UI
 |[mqttx-cli](./documentation/services/mqttx )||||a CLI for MQTT
 |[neo4j-1](./documentation/services/neo4j )|[Web UI](http://192.168.1.112:7474)|7474<br>7687<br>|7474<br>7687<br>|Native graph database management system
+|[postgresql](./documentation/services/postgresql )||5432<br>|5432<br>|Open-Source object-relational database system
 |[qdrant](./documentation/services/qdrant )|[Web UI](http://192.168.1.112:6333/dashboard) - [Rest API](http://192.168.1.112:6333)|6333<br>6334<br>|6333<br>6334<br>|AI-native vector database
 |[redis-1](./documentation/services/redis )||6379<br>|6379<br>|Key-value store
 |[redis-commander](./documentation/services/redis-commander )|[Web UI](http://192.168.1.112:28119)|28119<br>|8081<br>|Graphical interface for Redis
