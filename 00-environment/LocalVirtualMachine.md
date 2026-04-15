@@ -23,7 +23,7 @@ Now for Elasticserach to run properly, we have to increase the `vm.max_map_count
 sudo sysctl -w vm.max_map_count=262144   
 ```
 
-Now let's checkout the NoSQL Workshop project from github:
+Now let's checkout the Modern Database Systems Workshop project from github:
 
 ```
 # Get the project

@@ -1,6 +1,6 @@
-# NoSQL Workshop
+# Modern Database Systems Workshop
 
-NoSQL Workshops with hands-on tutorials for working with Redis, Cassandra, MongoDB, ...
+Hands-on tutorials for working with a broad spectrum of modern database systems — Relational (PostgreSQL), NewSQL (CockroachDB), Key-Value (Redis), Wide-Column (Cassandra), Document (MongoDB), Search (Elasticsearch), Graph (Neo4j, GraphDB), Time-Series (InfluxDB), and Vector (Qdrant).
 
 This workshop is part of the Trivadis course [NoSQL Databases](https://www.trivadis.com/en/training/nosql-databases-bd-nosql) as well as the [NoSQL Module of the Big Data CAS](https://www.bfh.ch/ti/de/weiterbildung/cas/big-data/) at the Berner Fachhochschule.
 
@@ -8,6 +8,7 @@ This workshop is part of the Trivadis course [NoSQL Databases](https://www.triva
 
 | # | Workshop | Description |
 |---|----------|-------------|
+| 1 | [Working with PostgreSQL](01-working-with-postgresql/README.md) | Design a 3rd Normal Form relational schema for the film dataset and learn SQL querying, JOINs, aggregations, indexes, and views in PostgreSQL. |
 | 2 | [Working with Redis](02-working-with-redis/README.md) | Learn the core Redis data structures (Strings, Lists, Sets, Sorted Sets, Hashes), benchmark performance with the built-in tool, and interact with Redis from Python. |
 | 3 | [Working with Cassandra](03-working-with-cassandra/README.md) | Model and query wide-column data in Apache Cassandra using CQL, covering keyspace design, partition keys, and time-series data patterns. |
 | 4 | [Working with MongoDB](04-working-with-mongodb/README.md) | Store, query, and aggregate JSON documents in MongoDB, exploring schema flexibility, indexing, and the aggregation pipeline. |
@@ -16,3 +17,4 @@ This workshop is part of the Trivadis course [NoSQL Databases](https://www.triva
 | 7 | [Working with GraphDB](07-working-with-graphdb/README.md) | Load RDF triples into Ontotext GraphDB and query the knowledge graph using SPARQL, including joins, filters, and aggregations. |
 | 8 | [Working with InfluxDB](08-working-with-influxdb/README.md) | Write and query time-series metrics in InfluxDB v3 using SQL and the Flux language, covering downsampling and retention policies. |
 | 9 | [Working with Qdrant](09-working-with-qdrant/README.md) | Store vector embeddings in Qdrant and perform similarity search with payload filtering using the REST API and Python client. |
+| 10 | [Working with CockroachDB](10-working-with-cockroach/README.md) | Use the same 3NF film schema on CockroachDB and explore its NewSQL-specific features: distributed ranges, time-travel queries, online schema changes, and serializable transactions. |
