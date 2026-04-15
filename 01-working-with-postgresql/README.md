@@ -687,7 +687,7 @@ WHERE g.name = 'Action'
 ORDER BY m.rating DESC NULLS LAST;
 ```
 
-````
+```
                      title                      | year | rating
 ------------------------------------------------+------+--------
  The Dark Knight                                | 2008 |    9.0
