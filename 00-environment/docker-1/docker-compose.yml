@@ -399,7 +399,7 @@ services:
       retries: 5
   #  ================================== PostgreSQL MCP Server ========================================== #
   postgresql-mcp:
-    image: crystaldba/postgres-mcp:latest
+    image: supercorp/supergateway:uvx
     container_name: postgresql-mcp
     hostname: postgresql-mcp
     labels:
@@ -415,10 +415,11 @@ services:
     volumes:
       - ./data-transfer:/data-transfer
     command: >
-      --access-mode=unrestricted
-      --transport=sse
-      --sse-host=0.0.0.0
-      --sse-port=8000
+      --stdio "uvx postgres-mcp --access-mode=unrestricted "
+      --baseUrl http://${PUBLIC_IP}:8000
+      --port 8000
+      --outputTransport sse
+      --cors
     restart: unless-stopped
   #  ================================== DbGate ========================================== #
   dbgate:
