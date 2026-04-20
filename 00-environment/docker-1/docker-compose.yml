@@ -1,11 +1,11 @@
 # =======================================================================
-# Platform Name            nosql-platform
+# Platform Name            nosql-platform-1
 # Platform Stack:          trivadis/platys-modern-data-platform
 # Platform Stack Version:  develop
 # =======================================================================
 networks:
   default:
-    name: nosql-platform
+    name: nosql-platform-1
 services:
   #  ================================== MCP Inspector ========================================== #
   mcp-inspector:
@@ -494,7 +494,7 @@ services:
       PUBLIC_IP: ${PUBLIC_IP:-127.0.0.1}
       DOCKER_HOST_IP: ${DOCKER_HOST_IP:-localhost}
       DATAPLATFORM_HOME: ${DATAPLATFORM_HOME}
-      PLATYS_PLATFORM_NAME: nosql-platform
+      PLATYS_PLATFORM_NAME: nosql-platform-1
       PLATYS_PLATFORM_STACK: trivadis/platys-modern-data-platform
       PLATYS_PLATFORM_STACK_VERSION: develop
       PLATYS_COPY_COOKBOOK_DATA: 'True'

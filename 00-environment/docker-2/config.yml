@@ -2,7 +2,7 @@
       # this file can be used as a template for a custom configuration
       # or to know about the different variables available for the generator
       platys:
-          platform-name: 'nosql-platform'
+          platform-name: 'nosql-platform-2'
           platform-stack: 'trivadis/platys-modern-data-platform'
           platform-stack-version: 'develop'
           structure: 'flat'
@@ -1109,7 +1109,7 @@
       #
       # ===== Elastic Kibana ========
       #
-      KIBANA_enable: true #needs to have elasticsearch enabled to work
+      KIBANA_enable: false #needs to have elasticsearch enabled to work
       #
       # ===== Metabase ========
       #
@@ -1192,7 +1192,7 @@
       #
       # ===== Redis ========
       #
-      REDIS_enable: true
+      REDIS_enable: false
       # either 'redis' or 'valkey'
       REDIS_edition: redis      
       REDIS_replicasets: 0
@@ -1235,17 +1235,17 @@
       #
       # ===== MCP Redis ========
       #
-      REDIS_MCP_enable: true
+      REDIS_MCP_enable: false
       # either 'stdio' or 'sse' or 'ws' or 'streamableHttp'
       REDIS_MCP_output_transport: 'sse'      
       #
       # ===== Redis Insight ========
       #
-      REDIS_INSIGHT_enable: true
+      REDIS_INSIGHT_enable: false
       #
       # ===== Redis Commander ========
       #
-      REDIS_COMMANDER_enable: true
+      REDIS_COMMANDER_enable: false
       #
       # ===== Valkey ========
       #
@@ -1268,7 +1268,7 @@
       #
       # ===== Apache Casandra ========
       #
-      CASSANDRA_enable: true
+      CASSANDRA_enable: false
       # either 3 or 4 or 5
       CASSANDRA_major_version: 5
       CASSANDRA_volume_map_data: false
@@ -1288,7 +1288,7 @@
       #
       # ===== MongoDB ========
       #
-      MONGO_enable: true
+      MONGO_enable: false
       MONGO_nodes: 1
       MONGO_volume_map_data: false
       MONGO_volume_map_log: false
@@ -1320,7 +1320,7 @@
       #
       # ===== Elasticsearch ========
       #
-      ELASTICSEARCH_enable: true
+      ELASTICSEARCH_enable: false
       ELASTICSEARCH_major_version: 8
       # one of 'oss', 'elastic',
       ELASTICSEARCH_edition: 'oss'
@@ -1337,7 +1337,7 @@
       DEJAVU_enable: false
       CEREBRO_enable: false
       ELASTICHQ_enable: false
-      ELASTICVUE_enable: true
+      ELASTICVUE_enable: false
       #
       # ===== Splunk ========
       #
@@ -1650,7 +1650,7 @@
       #
       # ===== PostgreSQL ========
       #
-      POSTGRESQL_enable: true
+      POSTGRESQL_enable: false
       POSTGRESQL_volume_map_data: false
       POSTGRESQL_database: postgres
       POSTGRESQL_user: postgres
@@ -1667,7 +1667,7 @@
       #
       # ===== PostgreSQL MCP Server ========
       #
-      POSTGRESQL_MCP_enable: true
+      POSTGRESQL_MCP_enable: false
       # either 'stdio' or 'sse' or 'streamable-http'
       POSTGRESQL_MCP_output_transport: 'sse'
       # either 'unrestricted' or 'restricted'
