@@ -68,32 +68,6 @@ services:
       - |
         start-notebook.sh
     restart: unless-stopped
-  #  ================================== Better Chatbot ========================================== #
-  better-chatbot:
-    image: ghcr.io/cgoinglove/better-chatbot:main
-    container_name: better-chatbot
-    hostname: better-chatbot
-    labels:
-      com.platys.name: better-chatbot
-      com.platys.description: Modern AI chatbot with multi-LLM support
-      com.platys.webui.title: Better Chatbot
-      com.platys.webui.url: http://dataplatform:28405
-    depends_on:
-      - postgresql
-    ports:
-      - 28405:3000
-    environment:
-      NO_HTTPS: 1
-      FILE_BASED_MCP_CONFIG: false
-      BETTER_AUTH_URL: http://${PUBLIC_IP:-127.0.0.1}:28405
-      BETTER_AUTH_SECRET: sijaUrJQ1yq96vy+mzWxXajRRAJ17RY3lUTNbBkv/b6sBfm8pAuQeXRl1yA=
-      POSTGRES_URL: postgresql://postgres:${PLATYS_POSTGRESQL_PASSWORD:-abc123!}@postgresql:5432/postgres
-      OLLAMA_BASE_URL: http://ollama:11434
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      GROQ_BASE_URL: https://api.groq.com/openai/v1
-    volumes:
-      - ./data-transfer:/data-transfer
-    restart: unless-stopped
   #  ================================== Redis ========================================== #
   redis-1:
     image: bitnamilegacy/redis:8.2
@@ -408,9 +382,9 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=postgres
 #      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --data-checksums      
-      - POSTGRES_MULTIPLE_DATABASES=demodb
-      - POSTGRES_MULTIPLE_USERS=demo
-      - POSTGRES_MULTIPLE_PASSWORDS=${PLATYS_POSTGRESQL_MULTIPLE_PASSWORD:-abc123!}
+      - POSTGRES_MULTIPLE_DATABASES=demodb,filmdb
+      - POSTGRES_MULTIPLE_USERS=demo,postgres
+      - POSTGRES_MULTIPLE_PASSWORDS=${PLATYS_POSTGRESQL_MULTIPLE_PASSWORD:-abc123!,abc123!}
       - POSTGRES_MULTIPLE_ADDL_ROLES=
       - PGDATA=/var/lib/postgresql/data/pgdata
       - DB_SCHEMA=demo
@@ -437,7 +411,7 @@ services:
     ports:
       - 28404:8000
     environment:
-      DATABASE_URI: postgresql://postgres:${PLATYS_POSTGRESQL_PASSWORD:-abc123!}@postgresql:5432/postgres
+      DATABASE_URI: postgresql://postgres:${PLATYS_POSTGRESQL_PASSWORD:-abc123!}@postgresql:5432/filmdb
     volumes:
       - ./data-transfer:/data-transfer
     command: >
