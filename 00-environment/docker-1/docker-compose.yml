@@ -114,6 +114,7 @@ services:
       - ./data-transfer:/data-transfer
     command: >
       --stdio "uvx --from redis-mcp-server==0.5.0 redis-mcp-server --url redis://redis-1:6379/0"
+      --baseUrl http://${PUBLIC_IP}:8000
       --port 8000
       --outputTransport sse
       --cors
