@@ -16,6 +16,7 @@ In this workshop we will learn how to work with **PostgreSQL**, a powerful open-
 - [Aggregating Data](#aggregating-data)
 - [Performance Optimisations using Indexes](#performance-optimisations-using-indexes)
 - [Views](#views)
+- [Using MCP with PostgreSQL](#using-mcp-with-postgresql)
 
 ## What you will learn
 
@@ -1015,3 +1016,86 @@ ORDER BY year;
  The Matrix Reloaded | 2003 |
 (3 rows)
 ```
+
+## Using MCP with PostgreSQL
+
+**Model Context Protocol (MCP)** is an open standard that lets AI assistants connect to external tools and data sources through a common interface. Instead of writing SQL manually, you can give an AI assistant access to your PostgreSQL database via an MCP server and interact with it in natural language.
+
+The data platform includes two components for this:
+
+| Component | URL | Purpose |
+|-----------|-----|---------|
+| **PostgreSQL MCP Server** | `http://dataplatform:28404/sse` | Exposes the PostgreSQL database as an MCP tool (SSE transport) |
+| **MCP Inspector** | <http://dataplatform:6274> | Web UI for exploring and testing any MCP server |
+
+The PostgreSQL MCP server is [postgres-mcp](https://github.com/crystaldba/postgres-mcp) by Crystal DBA, running with `--access-mode=unrestricted` and connected to the `postgres` database on the `postgresql` container.
+
+### Exploring the MCP server with MCP Inspector
+
+MCP Inspector is a browser-based tool for browsing the tools and resources an MCP server exposes and for sending test requests.
+
+1. Open <http://dataplatform:6274> in your browser.
+2. In the **Transport** dropdown, select **SSE**.
+3. In the **URL** field, enter:
+   ```
+   http://dataplatform:28404/sse
+   ```
+4. Click **Connect**.
+
+> **What you should see:** The Inspector connects and lists the MCP server's capabilities — tools such as `query`, `execute`, `list_schemas`, `list_tables`, `describe_table`, and `explain`.
+
+### Browsing tools
+
+Once connected, click the **Tools** tab. You will see the full list of tools the postgres-mcp server exposes. Click any tool name to expand its input schema and description.
+
+Key tools available:
+
+| Tool | Description |
+|------|-------------|
+| `list_schemas` | List all schemas in the connected database |
+| `list_tables` | List all tables in a given schema |
+| `describe_table` | Show columns, types, and constraints for a table |
+| `query` | Run a read-only SQL query and return results |
+| `execute` | Run a DML or DDL statement |
+| `explain` | Return the query plan for a SQL statement |
+
+### Running a query from MCP Inspector
+
+1. Click the **Tools** tab and select **query**.
+2. In the **Arguments** panel, enter the following JSON:
+   ```json
+   {
+     "sql": "SELECT title, year, rating FROM movie ORDER BY rating DESC NULLS LAST LIMIT 5"
+   }
+   ```
+3. Click **Run Tool**.
+
+> **What you should see:** A JSON response containing the top-5 rated movies from the `filmdb` database.
+
+### Changing the target database
+
+By default the MCP server connects to the `postgres` database. To query the `filmdb` database you created in this workshop, pass the database name in the connection URI argument where supported, or ask your AI assistant to switch context. Alternatively, you can connect the MCP Inspector directly to a `filmdb`-scoped SSE endpoint if the platform has one configured.
+
+To verify which database is active:
+
+1. Select the **query** tool in MCP Inspector.
+2. Run:
+   ```json
+   { "sql": "SELECT current_database()" }
+   ```
+
+### Connecting an AI assistant to the MCP server
+
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. Configure the client with:
+
+- **Transport**: SSE
+- **URL**: `http://dataplatform:28404/sse`
+
+Once connected, the assistant can answer questions like:
+- *"How many movies are in each genre?"*
+- *"List all actors who appeared in more than one film."*
+- *"What is the average rating of action movies?"*
+
+The assistant translates these into SQL queries that run against your PostgreSQL database, and returns the results in plain language.
+
+> **What just happened?** The MCP server acts as a bridge between the AI assistant and PostgreSQL. The assistant never receives the raw connection credentials — it only sees the MCP tool interface, which enforces access-mode restrictions set when the server was started (`--access-mode=unrestricted` allows both reads and writes in this setup).
