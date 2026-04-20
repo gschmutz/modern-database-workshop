@@ -970,11 +970,35 @@
       LOCAL_AI_gpu_enabled: false
       LOCAL_AI_volume_map_data: false
       #
-      # ===== Ollama WebUI ========
+      # ===== Open WebUI (used to be Ollama WebUI) ========
       #      
-      OLLAMA_WEBUI_enable: false
-      OLLAMA_WEBUI_volume_map_data: false
-      OLLAMA_WEBUI_secret_key:
+      OPEN_WEBUI_enable: false
+      OPEN_WEBUI_volume_map_data: false
+      OPEN_WEBUI_secret_key: sijaUrJQ1yq96vy+mzWxXajRRAJ17RY3lUTNbBkv/b6sBfm8pAuQeXRl1yA=
+      OPEN_WEBUI_gpu_enabled: false
+      # either 'sqlite' or 'posgres'
+      OPEN_WEBUI_database_type: sqlite
+      # the next 3 configs are req. when mysql or postgres is used
+      OPEN_WEBUI_database_user: postgres
+      OPEN_WEBUI_database_password: abc123!
+      OPEN_WEBUI_database_name: postgres
+      # one of 'chroma', 'milvus', 'qdrant', 'opensearch', 'pgvector'
+      OPEN_WEBUI_vector_db: chroma
+      # either empty (for SentenceTransformers) or 'openai' or 'ollama'
+      OPEN_WEBUI_rag_embedding_engine: 
+      OPEN_WEBUI_rag_embedding_model: 
+      # either emtpy (for local whisper) or 'openai'
+      OPEN_WEBUI_audio_stt_engine:
+      OPEN_WEBUI_audio_transcriber_enabled: false
+
+      #
+      # ===== Better Chatbot ========
+      #
+      BETTER_CHATBOT_enable: true
+      BETTER_CHATBOT_auth_secret: 'sijaUrJQ1yq96vy+mzWxXajRRAJ17RY3lUTNbBkv/b6sBfm8pAuQeXRl1yA='
+      # leave empty to auto-build from POSTGRESQL_* settings when POSTGRESQL_enable is true
+      BETTER_CHATBOT_postgres_url: ''
+
       #
       # ===== Alpaca WebUI ========
       #      
@@ -2328,3 +2352,102 @@
       FHIR_GATEWAY_kafka_enabled: false
       FHIR_GATEWAY_pseudonymizer_enabled: false
       
+
+      # ========================================================================
+      # External Services
+      # ========================================================================
+
+      external:
+        KAFKA_enable: false
+        KAFKA_bootstrap_servers:
+        KAFKA_security_protocol: 
+        KAFKA_sasl_mechanism:
+        KAFKA_login_module:
+        # Username to use for the tools to connect to the Kafka cluster, either set it here or use PLATYS_KAFKA_USERNAME and PLATYS_KAFKA_PASSWORD environment variable
+        KAFKA_sasl_username: 
+        KAFKA_sasl_password: 
+
+        SCHEMA_REGISTRY_enable: false
+        SCHEMA_REGISTRY_url:
+
+        SPARK_enable: false
+        SPARK_master_url: 'spark://spark-master:7077'
+
+        HIVE_METASTORE_enable: false
+        HIVE_METASTORE_host: hive-metastore
+        HIVE_METASTORE_port: 9083
+        HIVE_METASTORE_rest_catalog_port: 9084
+
+        S3_enable: false
+        S3_endpoint: s3.amazonaws.com
+        S3_default_region:
+        S3_path_style_access: false
+        S3_admin_bucket_name: 'admin-bucket'
+
+        POSTGRESQL_enable: false
+        POSTGRESQL_host:
+        POSTGRESQL_port: 5432
+        POSTGRESQL_database:
+        POSTGRESQL_user:
+        POSTGRESQL_password:
+
+        MYSQL_enable: false
+        MYSQL_host:
+        MYSQL_port: 5432
+        MYSQL_database:
+        MYSQL_user:
+        MYSQL_password:
+
+        ADLS_enable: false
+        ADLS_storage_account:
+
+        SNOWFLAKE_enable: false
+        SNOWFLAKE_account:
+        SNOWFLAKE_user:
+        SNOWFLAKE_password:
+        SNOWFLAKE_database:
+        SNOWFLAKE_role:
+        SNOWFLAKE_warehouse:
+
+        DATAHUB_enable: false
+        DATAHUB_gms_url:
+
+        OLLAMA_enable: false
+        OLLAMA_url: http://${PUBLIC_IP}:11434
+
+        LMSTUDIO_enable: false
+        LMSTUDIO_url: http://${PUBLIC_IP}:1234/v1
+
+        ANTHROPIC_enable: false
+        ANTHROPIC_api_key: ${ANTHROPIC_API_KEY}
+
+        OPENAI_enable: false
+        OPENAI_api_key: ${OPENAI_API_KEY}
+        OPENAI_base_url:
+        OPENAI_model_name:
+        OPENAI_small_model_name:
+
+        GROQ_enable: true
+        GROQ_api_key: ${GROQ_API_KEY}
+        GROQ_base_url: https://api.groq.com/openai/v1
+
+        OPENROUTER_enable: false
+        OPENROUTER_api_key:
+
+        LANGSMITH_enable: false
+        LANGSMITH_api_key: 
+        LANGSMITH_project:
+
+        LANGWATCH_enable: false
+        LANGWATCH_url: 
+
+        LANGFUSE_enable: false
+        LANGFUSE_secret_key:
+        LANGFUSE_public_key:
+        LANGFUSE_url: 
+
+        BRAVE_enable: false
+        BRAVE_api_key:
+
+        SEARXNG_enable: false
+        SEARXNG_url:
