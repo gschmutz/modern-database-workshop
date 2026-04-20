@@ -1,0 +1,512 @@
+# =======================================================================
+# Platform Name            nosql-platform
+# Platform Stack:          trivadis/platys-modern-data-platform
+# Platform Stack Version:  develop
+# =======================================================================
+networks:
+  default:
+    name: nosql-platform
+services:
+  #  ================================== MCP Inspector ========================================== #
+  mcp-inspector:
+    image: ghcr.io/modelcontextprotocol/inspector:latest
+    container_name: mcp-inspector
+    hostname: mcp-inspector
+    labels:
+      com.platys.name: mcp-inspector
+      com.platys.description: MCP Inspector
+      com.platys.webui.title: MCP Inspector UI
+      com.platys.webui.url: http://dataplatform:6274
+    ports:
+      - 6274:6274
+      - 6277:6277
+    environment:
+      DANGEROUSLY_OMIT_AUTH: true
+      CLIENT_PORT: 6274
+      SERVER_PORT: 6277
+      HOST: 0.0.0.0
+      MCP_SERVER_REQUEST_TIMEOUT: 10000
+      MCP_REQUEST_TIMEOUT_RESET_ON_PROGRESS: true
+      MCP_REQUEST_MAX_TOTAL_TIMEOUT: 60000
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Jupyter ========================================== #
+  jupyter:
+    image: jupyter/minimal-notebook:latest
+    container_name: jupyter
+    hostname: jupyter
+    labels:
+      com.platys.name: jupyter
+      com.platys.description: Web-based interactive development environment for notebooks, code, and data
+      com.platys.webui.title: Jupyter UI
+      com.platys.webui.url: http://dataplatform:28888
+      com.platys.password.envvars: PLATYS_JUPYTER_TOKEN,PLATYS_AWS_SECRET_ACCESS_KEY
+    ports:
+      - 28888:8888
+    user: root
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      JUPYTER_ENABLE_LAB: "'yes'"
+      GRANT_SUDO: "'yes'"
+      JUPYTER_TOKEN: ${PLATYS_JUPYTER_TOKEN:-abc123!}
+      DOCKER_STACKS_JUPYTER_CMD: lab
+      MAVEN_DOWNLOAD_JARS: com.amazonaws:aws-java-sdk-bundle:1.12.262,org.apache.hadoop:hadoop-aws:3.3.4,com.google.guava:guava:27.1-jre,software.amazon.awssdk:bundle:2.27.1
+      # remove some JARS if they are conflicting with the ones installed above
+      REMOVE_JARS: guava-14.0.1.jar
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./init/jupyter/on-startup-jupyter/:/usr/local/bin/start-notebook.d/
+      - ./init/jupyter/on-startup-jupyter-finished/:/usr/local/bin/before-notebook.d/
+      - ./init/jupyter/on-startup-notebook-kernel:/home/jovyan/.ipython/profile_default/startup/
+      - ./scripts/docker/maven-download.sh:/maven-download.sh
+    command:
+      # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+      - bash
+      - -c
+      - |
+        start-notebook.sh
+    restart: unless-stopped
+  #  ================================== Redis ========================================== #
+  redis-1:
+    image: bitnamilegacy/redis:8.2
+    hostname: redis-1
+    container_name: redis-1
+    labels:
+      com.platys.name: redis
+      com.platys.description: Key-value store
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PORT_NUMBER=6379
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_AOF_ENABLED=yes
+      - REDIS_RDB_POLICY_DISABLED=yes
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: /opt/bitnami/scripts/redis/run.sh --loglevel notice
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, redis-cli --no-auth-warning ping | grep PONG]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  #  ================================== Redis MCP Server ========================================== #
+  redis-mcp:
+    image: supercorp/supergateway:uvx
+    container_name: redis-mcp
+    hostname: redis-mcp
+    labels:
+      com.platys.name: redis-mcp
+      com.platys.restapi.title: Redis MCP Server
+      com.platys.restapi.url: http://dataplatform:28225/sse
+    depends_on:
+      redis-1:
+        condition: service_healthy
+    ports:
+      - 28225:8000
+    environment:
+      REDIS_HOST: redis-1
+      REDIS_PORT: 6379
+      # REDIS_PWD: yourpassword      
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: >
+      --stdio "uvx --from redis-mcp-server==0.5.0 redis-mcp-server --url redis://redis-1:6379/0"
+      --port 8000
+      --outputTransport sse
+      --cors
+    restart: unless-stopped
+  #  ================================== Redis Insight ========================================== #
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    hostname: redis-insight
+    labels:
+      com.platys.name: redis-insight
+      com.platys.description: Graphical interface for Redis
+      com.platys.webui.title: Redis Insight UI
+      com.platys.webui.url: http://dataplatform:28174
+    ports:
+      - 28174:5540
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Redis Commander ========================================== #
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    hostname: redis-commander
+    labels:
+      com.platys.name: redis-commander
+      com.platys.description: Graphical interface for Redis
+      com.platys.webui.title: Redis Commander UI
+      com.platys.webui.url: http://dataplatform:28119
+    ports:
+      - 28119:8081
+    environment:
+      - REDIS_HOST=redis-1
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=abc123!
+      - REDIS_DB=0
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Cassandra ========================================== #
+  cassandra-1:
+    image: bitnamilegacy/cassandra:5.0
+    container_name: cassandra-1
+    hostname: cassandra-1
+    labels:
+      com.platys.name: cassandra
+      com.platys.description: wide-column NoSQL database
+    ports:
+      - 29042:9042
+      - 7199:7199
+      - 9160:9160
+    environment:
+      - CASSANDRA_CLUSTER_NAME="Test Cluster"
+      - CASSANDRA_DATACENTER=se1
+      - CASSANDRA_PASSWORD_SEEDER=yes
+      - CASSANDRA_USER=cassandra
+      - CASSANDRA_PASSWORD=cassandra
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=128
+      - LOCAL_JMX=no
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./conf/cassandra/jmxremote.access:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/management/jmxremote.access
+      - ./conf/cassandra/jmxremote.password:/etc/cassandra/jmxremote.password
+    restart: unless-stopped
+  #  ================================== MongoDB ========================================== #
+  mongo-1:
+    image: mongo:8
+    container_name: mongo-1
+    hostname: mongo-1
+    labels:
+      com.platys.name: mongodb
+      com.platys.description: Document NoSQL database
+      com.platys.password.envvars: PLATYS_MONGO_PASSWORD
+    ports:
+      - 27017:27017
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=${PLATYS_MONGO_PASSWORD:-abc123!}
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/data/log
+    volumes:
+      - ./data-transfer:/data-transfer
+      # seeding scripts
+      - ./init/mongodb:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
+  #  ================================== MongoDB MCP Server ========================================== #
+  mongo-mcp:
+    image: supercorp/supergateway
+    container_name: mongo-mcp
+    hostname: mongo-mcp
+    labels:
+      com.platys.name: mongo-mcp
+      com.platys.restapi.title: MongoDB MCP Server
+      com.platys.restapi.url: http://dataplatform:28403/sse
+    depends_on:
+      mongo-1:
+        condition: service_healthy
+    ports:
+      - 28403:8000
+    environment:
+      MDB_MCP_CONNECTION_STRING: mongodb://root:${PLATYS_MONGO_PASSWORD:-abc123!}@mongo-1:27017
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: >
+      --stdio "npx -y mongodb-mcp-server@1.9.0"
+      --port 8000
+      --outputTransport sse
+      --cors
+    restart: unless-stopped
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    hostname: mongo-express
+    labels:
+      com.platys.name: mongo-express
+      com.platys.description: MongoDB UI
+      com.platys.webui.title: Mongo Express UI
+      com.platys.webui.url: http://dataplatform:28123
+      com.platys.password.envvars: PLATYS_MONGO_EXPRESS_PASSWORD
+    ports:
+      - 28123:8081
+    environment:
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_URL=mongodb://root:${PLATYS_MONGO_PASSWORD:-abc123!}@mongo-1:27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${PLATYS_MONGO_PASSWORD:-abc123!}
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_BASICAUTH=false
+      - ME_CONFIG_OPTIONS_EDITORTHEME=default
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Elasticsearch ========================================== #
+  elasticsearch-1:
+    image: elasticsearch:8.19.10
+    hostname: elasticsearch-1
+    container_name: elasticsearch-1
+    labels:
+      com.platys.name: elasticsearch
+      com.platys.description: Search-engine NoSQL store
+      com.platys.restapi.title: Elasticsearch REST API
+      com.platys.restapi.url: http://dataplatform:9200
+      com.platys.manual.step.msgs: sudo sysctl -w vm.max_map_count=262144
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: false
+      xpack.monitoring.collection.enabled: 'false'
+      xpack.security.http.ssl.enabled: false
+      xpack.security.transport.ssl.enabled: false
+      http.cors.enabled: 'true'
+      http.cors.allow-origin: http://${DOCKER_HOST_IP:-localhost}:28275,http://${PUBLIC_IP:-127.0.0.1}:28275,http://dejavu:1358,http://dataplatform:28125,http://dataplatform:28125,http://${PUBLIC_IP:-127.0.0.1}:28125,http://${DOCKER_HOST_IP:-localhost}:28125,http://127.0.0.1:1358
+      http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+      http.cors.allow-credentials: 'true'
+      cluster.routing.allocation.disk.threshold_enabled: 'true'
+      cluster.routing.allocation.disk.watermark.low: 2gb
+      cluster.routing.allocation.disk.watermark.high: 1gb
+      cluster.routing.allocation.disk.watermark.flood_stage: 512mb
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -s http://localhost:9200/_cat/health?h=status | grep -q green
+      retries: 300
+      interval: 10s
+  #  ================================== ElasticVue ========================================== #
+  elasticvue:
+    image: cars10/elasticvue:latest
+    container_name: elasticvue
+    hostname: elasticvue
+    labels:
+      com.platys.name: elasticvue
+      com.platys.description: UI for Elasticsearch
+      com.platys.webui.title: ElasticVue UI
+      com.platys.webui.url: http://dataplatform:28275
+    ports:
+      - 28275:8080
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Kibana ========================================== #
+  kibana:
+    image: kibana:8.19.10
+    hostname: kibana
+    container_name: kibana
+    labels:
+      com.platys.name: kibana
+      com.platys.description: Visualization for Elasticsearch
+      com.platys.webui.title: Kibana UI
+      com.platys.webui.url: http://dataplatform:5601
+    depends_on:
+      - elasticsearch-1
+    ports:
+      - 5601:5601
+    environment:
+      discovery.type: single-node
+      ELASTICSEARCH_HOSTS: http://elasticsearch-1:9200
+      SERVER_HOST: 0.0.0.0
+      SERVER_NAME: kibana
+      XPACK_GRAPH_enabled: 'false'
+      XPACK_MONITORING_enabled: 'false'
+      XPACK_REPORTING_enabled: 'false'
+      XPACK_SECURITY_enabled: 'false'
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: [/bin/bash, -c, /usr/share/kibana/bin/kibana-plugin remove x-pack; /usr/local/bin/kibana-docker]
+    restart: unless-stopped
+    healthcheck:
+      test: curl --cacert /ca/ca.crt -s https://localhost:5601 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      retries: 600
+  kibana-init:
+    image: alpine/curl
+    container_name: kibana-init
+    hostname: kibana-init
+    depends_on: {kibana: {condition: service_healthy}}
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./init/kibana/dashboards:/dashboards
+    entrypoint:
+      - sh
+      - -c
+      - |
+        echo "Installing Kibana Dashboards"
+        for file in /dashboards/*.ndjson;
+        do
+          if [ -f "$file" ]; then
+            echo "Uploading dashboard: $file"        
+            response=$(curl -s -o /dev/null -X POST -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD -F 'file=@/dashboards/$$dashboard.ndjson' -H 'kbn-xsrf:reporting' "http://kibana:5601/api/saved_objects/_import?overwrite=true")
+          else
+            echo "No .ndjson files found in $DASHBOARD_DIR"
+          fi
+        done
+    restart: no
+    init: true
+  #  ================================== PostgreSQL ========================================== #
+  postgresql:
+    image: postgres:18
+    container_name: postgresql
+    hostname: postgresql
+    labels:
+      com.platys.name: postgresql
+      com.platys.description: Open-Source object-relational database system
+      com.platys.password.envvars: PLATYS_POSTGRESQL_PASSWORD,PLATYS_POSTGRESQL_MULTIPLE_PASSWORD
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=${PLATYS_POSTGRESQL_PASSWORD:-abc123!}
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+#      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --data-checksums      
+      - POSTGRES_MULTIPLE_DATABASES=demodb
+      - POSTGRES_MULTIPLE_USERS=demo
+      - POSTGRES_MULTIPLE_PASSWORDS=${PLATYS_POSTGRESQL_MULTIPLE_PASSWORD:-abc123!}
+      - POSTGRES_MULTIPLE_ADDL_ROLES=
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - DB_SCHEMA=demo
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./init/postgresql:/docker-entrypoint-initdb.d/
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  #  ================================== PostgreSQL MCP Server ========================================== #
+  postgresql-mcp:
+    image: crystaldba/postgres-mcp:latest
+    container_name: postgresql-mcp
+    hostname: postgresql-mcp
+    labels:
+      com.platys.name: postgresql-mcp
+      com.platys.restapi.title: PostgreSQL MCP Server
+      com.platys.restapi.url: http://dataplatform:28404/sse
+    depends_on:
+      - postgresql
+    ports:
+      - 28404:8000
+    environment:
+      DATABASE_URI: postgresql://postgres:${PLATYS_POSTGRESQL_PASSWORD:-abc123!}@postgresql:5432/postgres
+    volumes:
+      - ./data-transfer:/data-transfer
+    command: >
+      --access-mode=unrestricted
+      --transport=sse
+    restart: unless-stopped
+  #  ================================== DbGate ========================================== #
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: dbgate
+    hostname: dbgate
+    labels:
+      com.platys.name: dbgate
+      com.platys.description: Open Source DB Management Tool
+      com.platys.webui.title: DbGate UI
+      com.platys.webui.url: http://dataplatform:28120
+      com.platys.password.envvars: PLATYS_DBGATE_PASSWORD
+    ports:
+      - 28120:3000
+    environment:
+      LOG_LEVEL: info
+      LOGIN: dbgate
+      PASSWORD: ${PLATYS_DBGATE_PASSWORD:-abc123!}
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== Wetty ========================================== #
+  wetty:
+    image: wettyoss/wetty:latest
+    container_name: wetty
+    hostname: wetty
+    labels:
+      com.platys.name: wetty
+      com.platys.description: A terminal window in Web-Browser
+      com.platys.webui.title: WeTTY UI
+      com.platys.webui.url: http://dataplatform:3001
+    ports:
+      - 3001:3000
+    environment:
+      - SSHHOST=${DOCKER_HOST_IP:-localhost}
+      - SSHPORT=22
+      - SSHUSER=
+      - SSHAUTH=password
+      - PORT=3000
+      - BASE=/
+    volumes:
+      - ./data-transfer:/data-transfer
+    restart: unless-stopped
+  #  ================================== markdown-viewer ========================================== #
+  markdown-viewer:
+    image: dannyben/madness:latest
+    container_name: markdown-viewer
+    hostname: markdown-viewer
+    labels:
+      com.platys.name: markdown-viewer
+      com.platys.description: Platys Platform homepage viewer
+      com.platys.webui.title: Markdown Viewer UI
+      com.platys.webui.url: http://dataplatform:80
+    ports:
+      - 80:3000
+    volumes:
+      - ./artefacts:/docs
+      - ./conf/markdown-viewer/markdown-madness.yml:/docs/.madness.yml
+      - ./data-transfer:/data-transfer
+    command: server
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, curl -f http://markdown-viewer:3000 || exit 1]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+  markdown-renderer:
+    image: trivadis/jinja2-renderer:0.8.1
+    container_name: markdown-renderer
+    hostname: markdown-renderer
+    labels:
+      com.platys.name: markdown-renderer
+      com.platys.description: Platys Platform homepage rendering
+    environment:
+      USE_PUBLIC_IP: 'True'
+      PUBLIC_IP: ${PUBLIC_IP:-127.0.0.1}
+      DOCKER_HOST_IP: ${DOCKER_HOST_IP:-localhost}
+      DATAPLATFORM_HOME: ${DATAPLATFORM_HOME}
+      PLATYS_PLATFORM_NAME: nosql-platform
+      PLATYS_PLATFORM_STACK: trivadis/platys-modern-data-platform
+      PLATYS_PLATFORM_STACK_VERSION: develop
+      PLATYS_COPY_COOKBOOK_DATA: 'True'
+      PLATYS_DATACENTER:
+      SERVICE_LIST_VERSION: 2
+    volumes:
+      - ./artefacts/templates:/templates
+      - ./artefacts/templates:/scripts
+      - .:/variables
+      - ./artefacts:/output
+      - ./data-transfer:/data-transfer
+    init: true
+volumes:
+  data-transfer-vol:
+    name: data_transfer_vol
