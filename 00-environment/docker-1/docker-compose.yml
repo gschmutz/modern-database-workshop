@@ -84,9 +84,6 @@ services:
       - 28405:3000
     environment:
       NO_HTTPS: 1
-      DISABLE_SIGN_UP: 1
-      DISABLE_EMAIL_SIGN_UP: 1
-      DISABLE_EMAIL_SIGN_IN: 1
       FILE_BASED_MCP_CONFIG: false
       BETTER_AUTH_URL: http://${PUBLIC_IP:-127.0.0.1}:28405
       BETTER_AUTH_SECRET: sijaUrJQ1yq96vy+mzWxXajRRAJ17RY3lUTNbBkv/b6sBfm8pAuQeXRl1yA=
