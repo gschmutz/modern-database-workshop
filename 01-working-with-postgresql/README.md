@@ -80,6 +80,8 @@ role      (PK)  -- 'actor' | 'director' | 'producer'
 
 This design eliminates all redundancy: a person's name is stored once; a genre string is stored once; the relationship tables only carry foreign keys.
 
+![](./images/db-model.png)
+
 ## Connecting to PostgreSQL
 
 ### Using the psql CLI
@@ -1086,10 +1088,36 @@ To verify which database is active:
 
 ### Connecting an AI assistant to the MCP server
 
-Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. Configure the client with:
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. Configure the client with (replace the IP address with your one):
 
-- **Transport**: SSE
-- **URL**: `http://dataplatform:28404/sse`
+```
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "DATABASE_URI",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://postgres:abc123!@54.93.239.135:5432/filmdb"
+      }
+    }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": false,
+    "ccdScheduledTasksEnabled": true,
+    "sidebarMode": "chat",
+    "coworkWebSearchEnabled": true,
+    "keepAwakeEnabled": true
+  }
+}
+```
 
 Once connected, the assistant can answer questions like:
 - *"How many movies are in each genre?"*
