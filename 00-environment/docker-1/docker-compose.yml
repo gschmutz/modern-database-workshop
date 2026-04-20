@@ -417,8 +417,6 @@ services:
       --transport=sse
       --sse-host=0.0.0.0
       --sse-port=8000
-      --streamable-http-host=0.0.0.0
-      --streamable-http-port=8000
     restart: unless-stopped
   #  ================================== DbGate ========================================== #
   dbgate:
