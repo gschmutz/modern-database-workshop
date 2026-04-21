@@ -22,7 +22,7 @@ Scroll down to **Launch script** and add the the following script to the edit fi
  * `2` - Neo4J, GraphDB, InfluxDB, QDrant
 
 ```
-export GITHUB_PROJECT=nosql-workshop
+export GITHUB_PROJECT=modern-database-workshop
 export ENVIRONMENT=1
 export GITHUB_OWNER=gschmutz
 export PLATYS_VERSION=2.4.0
