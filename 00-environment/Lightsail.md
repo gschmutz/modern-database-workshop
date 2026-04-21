@@ -96,7 +96,7 @@ sudo echo "export DATAPLATFORM_HOME=$PWD" | sudo tee -a /etc/profile.d/platys-pl
 sudo -E docker-compose up -d
 ```
 
-into the **Launch Script** edit field
+into the **Launch Script** text field
  
 ![Alt Image Text](./images/lightsail-create-instance-3.png "Lightsail Homepage")
 
