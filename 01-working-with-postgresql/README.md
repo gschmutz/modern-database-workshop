@@ -1040,55 +1040,52 @@ MCP Inspector is a browser-based tool for browsing the tools and resources an MC
 2. In the **Transport** dropdown, select **SSE**.
 3. In the **URL** field, enter:
    ```
-   http://dataplatform:28404/sse
+   http://63.178.5.123:28404/sse
    ```
-4. Click **Connect**.
-
-> **What you should see:** The Inspector connects and lists the MCP server's capabilities — tools such as `query`, `execute`, `list_schemas`, `list_tables`, `describe_table`, and `explain`.
+   
+   replace the IP address by the one from the server where the dataplatform is running-
+4. Change **Connection Type** to `Direct`    
+5. Click **Connect** and you should see a **Connected** message, if connectivity is successful.
 
 ### Browsing tools
 
-Once connected, click the **Tools** tab. You will see the full list of tools the postgres-mcp server exposes. Click any tool name to expand its input schema and description.
+Once connected
+
+1. Navigate to **Tools** in the Menu bar.
+2. Click on **List Tools** to display the available tools.
+
+Click any tool name to expand its input schema and description.
 
 Key tools available:
 
 | Tool | Description |
 |------|-------------|
 | `list_schemas` | List all schemas in the connected database |
-| `list_tables` | List all tables in a given schema |
-| `describe_table` | Show columns, types, and constraints for a table |
-| `query` | Run a read-only SQL query and return results |
-| `execute` | Run a DML or DDL statement |
-| `explain` | Return the query plan for a SQL statement |
+| `list_objects` | List objects in a schema |
+| `get_object_details` | Show detailed information about a database object |
+| `execute_sql` | Execute any SQL query |
+| `explain_query` | Explains the execution plan for a SQL query, showing how the database will execute it and provides detailed cost estimates. |
 
 ### Running a query from MCP Inspector
 
-1. Click the **Tools** tab and select **query**.
-2. In the **Arguments** panel, enter the following JSON:
-   ```json
-   {
-     "sql": "SELECT title, year, rating FROM movie ORDER BY rating DESC NULLS LAST LIMIT 5"
-   }
-   ```
+1. Click the **Tools** tab and select **execute_sql**.
+2. In the **sql** field, enter the following SQL statement
+
+   ```SELECT title, year, rating FROM movie ORDER BY rating DESC NULLS LAST LIMIT 5```
+   
 3. Click **Run Tool**.
 
 > **What you should see:** A JSON response containing the top-5 rated movies from the `filmdb` database.
 
-### Changing the target database
-
-By default the MCP server connects to the `postgres` database. To query the `filmdb` database you created in this workshop, pass the database name in the connection URI argument where supported, or ask your AI assistant to switch context. Alternatively, you can connect the MCP Inspector directly to a `filmdb`-scoped SSE endpoint if the platform has one configured.
-
-To verify which database is active:
-
-1. Select the **query** tool in MCP Inspector.
-2. Run:
-   ```json
-   { "sql": "SELECT current_database()" }
-   ```
-
 ### Connecting an AI assistant to the MCP server
 
-Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. Configure the client with (replace the IP address with your one):
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. 
+
+To connect from **Claude Desktop** to the PostgreSQL MCP server 
+
+1. Navigate to **Settings**
+2. Click on **Developer** in the menu on the left side
+3. Click on **Edit Config** and open the `claude_desktop_config.json` in an Editor and add the following config
 
 ```
 {
@@ -1105,7 +1102,7 @@ Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extensi
         "--access-mode=unrestricted"
       ],
       "env": {
-        "DATABASE_URI": "postgresql://postgres:abc123!@54.93.239.135:5432/filmdb"
+        "DATABASE_URI": "postgresql://postgres:abc123!@63.178.5.123:5432/filmdb"
       }
     }
   },
@@ -1118,11 +1115,13 @@ Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extensi
   }
 }
 ```
+4. Save the file and restart **Claude Desktop**. 
 
 Once connected, the assistant can answer questions like:
-- *"How many movies are in each genre?"*
-- *"List all actors who appeared in more than one film."*
-- *"What is the average rating of action movies?"*
+
+- *How many movies are in each genre?*
+- *List all actors who appeared in more than one film.*
+- *What is the average rating of action movies?*
 
 The assistant translates these into SQL queries that run against your PostgreSQL database, and returns the results in plain language.
 
