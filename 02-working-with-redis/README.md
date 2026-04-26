@@ -14,6 +14,7 @@ In this workshop we will learn the basics of working with Redis. We will be usin
 - [Hash structures](#hash-structures)
 - [Redis Benchmark](#redis-benchmark)
 - [Working with Redis from Python](#working-with-redis-from-python)
+- [Using MCP with Redis](#using-mcp-with-redis)
 
 ## What you will learn
 
@@ -24,6 +25,7 @@ In this workshop we will learn the basics of working with Redis. We will be usin
 - How to work with Hash data structures
 - How to benchmark Redis performance with the built-in benchmark tool
 - How to interact with Redis using the Python API
+- How to use Redis MCP server to talk to the data
 
 ## Prerequisites
 
@@ -1170,4 +1172,98 @@ else:
 ```
 
 > **What you should see:** `Deleted N keys.` confirming all workshop keys have been removed.
+
+## Using MCP with Redis
+
+**Model Context Protocol (MCP)** is an open standard that lets AI assistants connect to external tools and data sources through a common interface. Instead of running Redis commands manually, you can give an AI assistant access to your Redis instance via an MCP server and interact with it in natural language.
+
+The data platform includes two components for this:
+
+| Component | URL | Purpose |
+|-----------|-----|---------|
+| **Redis MCP Server** | `http://dataplatform:28225/sse` | Exposes Redis as an MCP tool (SSE transport) |
+| **MCP Inspector** | <http://dataplatform:6274> | Web UI for exploring and testing any MCP server |
+
+The Redis MCP server is [mcp-redis](https://github.com/redis/mcp-redis) by Redis, running as version `0.5.0` and connected to `redis://redis-1:6379/0` (database 0).
+
+### Exploring the MCP server with MCP Inspector
+
+MCP Inspector is a browser-based tool for browsing the tools an MCP server exposes and for sending test requests.
+
+1. Open <http://dataplatform:6274> in your browser.
+2. In the **Transport** dropdown, select **SSE**.
+3. In the **URL** field, enter:
+   ```
+   http://dataplatform:28225/sse
+   ```
+4. Click **Connect**.
+
+> **What you should see:** The Inspector connects and lists the MCP server's capabilities — tools covering all major Redis data structures: strings, lists, sets, sorted sets, hashes, streams, and more.
+
+### Browsing tools
+
+Once connected, click the **Tools** tab. You will see the full list of tools the Redis MCP server exposes. Click any tool name to expand its input schema and description.
+
+Key tools available (grouped by data type):
+
+| Category | Example tools |
+|----------|--------------|
+| **Strings** | `set`, `get`, `mset`, `mget`, `incr`, `incrby`, `decr`, `expire`, `ttl` |
+| **Lists** | `rpush`, `lpush`, `lrange`, `lpop`, `rpop`, `llen` |
+| **Sets** | `sadd`, `smembers`, `srem`, `sismember`, `sunion`, `sinter` |
+| **Sorted Sets** | `zadd`, `zrange`, `zrevrange`, `zrank`, `zscore` |
+| **Hashes** | `hset`, `hget`, `hgetall`, `hmset`, `hincrby`, `hdel` |
+| **Keys** | `keys`, `exists`, `del`, `type`, `scan` |
+
+### Running a command from MCP Inspector
+
+1. Click the **Tools** tab and select **set**.
+2. In the **Arguments** panel, enter:
+   ```json
+   {
+     "key": "mcp:test",
+     "value": "hello from MCP Inspector"
+   }
+   ```
+3. Click **Run Tool**.
+
+> **What you should see:** A JSON response confirming the key was set (`"OK"`).
+
+Now read it back:
+
+1. Select the **get** tool.
+2. Enter:
+   ```json
+   { "key": "mcp:test" }
+   ```
+3. Click **Run Tool**.
+
+> **What you should see:** `"hello from MCP Inspector"` returned as the value.
+
+### Exploring stored keys
+
+To see what keys are currently in Redis, select the **keys** tool and enter:
+
+```json
+{ "pattern": "*" }
+```
+
+> **What you should see:** A list of all keys currently stored in the Redis instance. If you completed earlier sections of this workshop, you will see keys like `server:name`, `pioneers`, `nosql:products`, and so on (or confirmation that they were cleaned up).
+
+### Connecting an AI assistant to the MCP server
+
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with an MCP extension) can connect to the Redis MCP server. Configure the client with:
+
+- **Transport**: SSE
+- **URL**: `http://dataplatform:28225/sse`
+
+Once connected, the assistant can answer questions and perform actions like:
+- *"Store the value 'active' in the key session:42 with a TTL of 300 seconds."*
+- *"What are all the members of the nosql:products set?"*
+- *"Add 'DynamoDB' to the nosql:products set."*
+- *"Show me the top 3 pioneers by birth year."*
+
+The assistant translates these into Redis commands that execute against the live Redis instance, and returns the results in plain language.
+
+> **What just happened?** The MCP server acts as a bridge between the AI assistant and Redis. The assistant sees a typed tool interface — each tool has a name, description, and input schema — rather than a raw socket connection. This means the assistant knows which commands are available, what arguments they accept, and can validate inputs before sending them, making AI-assisted data operations safer and more predictable.
 
