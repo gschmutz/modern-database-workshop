@@ -14,6 +14,7 @@ We assume that the platform described [here](../01-environment) is running and a
 - [Let's add a few movies](#lets-add-a-few-movies)
 - [Analysers](#analysers)
 - [Searching in Elasticsearch](#searching-in-elasticsearch)
+- [Using Elasticsearch from Python](#using-elasticsearch-from-python)
 
 ## What you will learn
 
@@ -23,6 +24,7 @@ We assume that the platform described [here](../01-environment) is running and a
 - How to configure and use analysers for text processing
 - How to perform URI search, query/filter, phrase, and proximity searches
 - How to sort search results
+- How to interact with Elasticsearch using the Python API
 
 ## Prerequisites
 
@@ -150,7 +152,7 @@ If enabled, then in a browser window, navigate to <http://dataplatform:28126/> a
 
 ![Alt Image Text](./images/cerebro.png "Cerebro")
 
-#### Apache Zeppelin
+#### Apache Zeppelin (this is currently not available on dataplatform)
 
 Another universal "data" tool is [Apache Zeppelin](http://zeppelin.apache.org). In a browser window, navigate to <http://dataplatform:28080/> and you should directly arrive on the home screen as shown below. 
 
@@ -217,6 +219,7 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
 ```
 
 ## Insert, Update and Delete Operations 
+
 First we use a single movie and see the various modify operations on Elasticsearch. 
 
 ### Insert a movie
@@ -750,3 +753,419 @@ curl -H "Content-Type: application/json" -XGET http://localhost:9200/movies/_sea
 ```
 
 > **What you should see:** Results ordered alphabetically by the `title.raw` keyword field rather than by relevance score.
+
+## Using Elasticsearch from Python
+
+The official `elasticsearch` Python client mirrors the REST API closely — every `curl` command you used in this workshop has a direct Python equivalent. In this section we will connect from the **Jupyter** environment and reproduce the same operations: creating an index with a mapping, indexing documents, searching, updating, and running aggregations.
+
+Open a browser and navigate to <http://dataplatform:28888> and log in with token `abc123!`.
+
+Create a new Python 3 notebook by clicking on the **Python 3 (ipykernel)** widget and work through the cells below in order.
+
+### Cell 1 — Install the library
+
+```python
+import sys
+!{sys.executable} -m pip install "elasticsearch>=8,<9"
+```
+
+> **What you should see:** pip output ending with `Successfully installed elasticsearch-8.x.x`.
+>
+> **Note:** The `elasticsearch` package is now at v9, but the platform runs Elasticsearch 8. Pinning to `>=8,<9` ensures the client sends a compatible `Accept` header (`compatible-with=8`) instead of `compatible-with=9`, which the server rejects.
+
+### Cell 2 — Connect to Elasticsearch
+
+```python
+from elasticsearch import Elasticsearch
+
+es = Elasticsearch("http://elasticsearch-1:9200")
+info = es.info()
+print(f"Connected to cluster: {info['cluster_name']}")
+print(f"Elasticsearch version: {info['version']['number']}")
+```
+
+> **What you should see:** The cluster name and server version string, confirming a successful connection.
+
+### Cell 3 — Create the index with a mapping
+
+The mapping defines how fields are indexed. `keyword` fields support exact matching and aggregations; `text` fields are analysed for full-text search.
+
+```python
+INDEX = "movies"
+
+if es.indices.exists(index=INDEX):
+    es.indices.delete(index=INDEX)
+
+es.indices.create(
+    index=INDEX,
+    body={
+        "mappings": {
+            "properties": {
+                "id":          {"type": "keyword"},
+                "year":        {"type": "integer"},
+                "runtime":     {"type": "integer"},
+                "rating":      {"type": "float"},
+                "votes":       {"type": "integer"},
+                "rank":        {"type": "integer"},
+                "genres":      {"type": "keyword"},
+                "languages":   {"type": "keyword"},
+                "title":       {"type": "text", "analyzer": "english",
+                                "fields": {"raw": {"type": "keyword"}}},
+                "plotOutline": {"type": "text", "analyzer": "english"},
+            }
+        }
+    },
+)
+print(f"Index '{INDEX}' created.")
+```
+
+> **What you should see:** `Index 'movies' created.`
+>
+> **What just happened?** Elasticsearch created the inverted index with the specified field types. The `title` field gets both a `text` subfield (analysed with the English stemmer) and a `raw` keyword subfield (unchanged, for sorting and aggregations).
+
+### Cell 4 — Index documents
+
+`es.index()` corresponds to a `PUT /<index>/_doc/<id>` call. Elasticsearch indexes the document immediately and makes it searchable after a refresh (default 1 second).
+
+```python
+movies = [
+    {
+        "id": "110912", "title": "Pulp Fiction", "year": 1994, "runtime": 154,
+        "languages": ["en", "es", "fr"], "rating": 8.9, "votes": 2084331,
+        "genres": ["Crime", "Drama"],
+        "plotOutline": (
+            "Jules Winnfield and Vincent Vega are two hit men out to retrieve a suitcase stolen "
+            "from their employer, mob boss Marsellus Wallace. Butch Coolidge is an aging boxer "
+            "paid by Wallace to lose his fight. The lives of these seemingly unrelated people are "
+            "woven together comprising a series of funny, bizarre and uncalled-for incidents."
+        ),
+        "coverUrl": "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SY150_CR1,0,101,150_.jpg",
+        "actors": [
+            {"actorID": "0000237", "name": "John Travolta"},
+            {"actorID": "0000168", "name": "Samuel L. Jackson"},
+            {"actorID": "0000246", "name": "Bruce Willis"},
+            {"actorID": "0000235", "name": "Uma Thurman"},
+            {"actorID": "0000233", "name": "Quentin Tarantino"},
+        ],
+        "directors": [{"directorID": "0000233", "name": "Quentin Tarantino"}],
+    },
+    {
+        "id": "133093", "title": "The Matrix", "year": 1999, "runtime": 136,
+        "languages": ["en"], "rating": 8.7, "votes": 1496538,
+        "genres": ["Action", "Sci-Fi"],
+        "plotOutline": (
+            "Thomas A. Anderson is a man living two lives. By day he is an average computer "
+            "programmer and by night a hacker known as Neo. Morpheus, a legendary hacker branded "
+            "a terrorist by the government, awakens Neo to the real world — a ravaged wasteland "
+            "where most of humanity have been captured by a race of machines."
+        ),
+        "coverUrl": "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX101_CR0,0,101,150_.jpg",
+        "actors": [
+            {"actorID": "0000206", "name": "Keanu Reeves"},
+            {"actorID": "0000401", "name": "Laurence Fishburne"},
+            {"actorID": "0005251", "name": "Carrie-Anne Moss"},
+            {"actorID": "0915989", "name": "Hugo Weaving"},
+        ],
+        "directors": [
+            {"directorID": "0905154", "name": "Lana Wachowski"},
+            {"directorID": "0905152", "name": "Lilly Wachowski"},
+        ],
+    },
+    {
+        "id": "0137523", "title": "Fight Club", "year": 1999, "runtime": 139,
+        "genres": ["Drama"], "rating": 8.8, "rank": 10,
+        "plotOutline": (
+            "An insomniac office worker and a devil-may-care soap maker form an underground fight "
+            "club that evolves into something much, much more."
+        ),
+    },
+    {
+        "id": "0068646", "title": "The Godfather", "year": 1972, "runtime": 175,
+        "genres": ["Crime", "Drama"], "rating": 9.2, "rank": 2,
+        "plotOutline": (
+            "The aging patriarch of an organized crime dynasty transfers control of his clandestine "
+            "empire to his reluctant son."
+        ),
+    },
+    {
+        "id": "0120737", "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "year": 2001, "runtime": 178, "genres": ["Adventure", "Drama", "Fantasy"],
+        "rating": 8.8, "rank": 12,
+        "plotOutline": (
+            "A meek Hobbit from the Shire and eight companions set out on a journey to destroy "
+            "the powerful One Ring and save Middle-earth from the Dark Lord Sauron."
+        ),
+    },
+    {
+        "id": "4154796", "title": "Avengers: Endgame", "year": 2019, "runtime": 181,
+        "genres": ["Action", "Adventure", "Fantasy", "Sci-Fi"], "rating": 8.4, "rank": 51,
+        "plotOutline": (
+            "After the devastating events of Infinity War, the Avengers assemble once more in "
+            "order to reverse Thanos's actions and restore balance to the universe."
+        ),
+    },
+]
+
+for movie in movies:
+    es.index(index=INDEX, id=movie["id"], document=movie)
+
+es.indices.refresh(index=INDEX)
+print(f"Indexed {len(movies)} movies.")
+```
+
+> **What you should see:** `Indexed 6 movies.`
+>
+> **What just happened?** Each `es.index()` call sends a `PUT` request to Elasticsearch. The `es.indices.refresh()` forces the index to flush its write buffer so documents are immediately searchable — without it you might need to wait up to 1 second for the automatic refresh.
+
+### Cell 5 — Retrieve a document by ID
+
+```python
+doc = es.get(index=INDEX, id="110912")
+source = doc["_source"]
+print(f"Title:   {source['title']}")
+print(f"Year:    {source['year']}")
+print(f"Rating:  {source['rating']}")
+print(f"Genres:  {', '.join(source['genres'])}")
+```
+
+```
+Title:   Pulp Fiction
+Year:    1994
+Rating:  8.9
+Genres:  Crime, Drama
+```
+
+> **What you should see:** The Pulp Fiction document fields printed from the `_source` object.
+
+### Cell 6 — Full-text match search
+
+```python
+resp = es.search(
+    index=INDEX,
+    body={
+        "query": {"match": {"title": "The Matrix"}},
+        "_source": ["title", "year", "rating"],
+    },
+)
+
+print(f"Total hits: {resp['hits']['total']['value']}")
+for hit in resp["hits"]["hits"]:
+    s = hit["_source"]
+    print(f"  [{hit['_score']:.4f}]  {s['title']} ({s['year']})  ★{s['rating']}")
+```
+
+> **What you should see:** Matching documents ordered by relevance score. Movies containing "The" or "Matrix" in the analysed title field will score higher for "Matrix".
+>
+> **What just happened?** The `english` analyser stems tokens (e.g. "running" → "run") and removes stop words before indexing. The same process is applied to the query, so the query and the indexed terms are compared at the stem level.
+
+### Cell 7 — Bool query with filter
+
+Filters are fast and cacheable — use them for binary yes/no conditions (range, exact match). Queries score by relevance — use them for full-text matching.
+
+```python
+resp = es.search(
+    index=INDEX,
+    body={
+        "query": {
+            "bool": {
+                "must":   {"match": {"title": "the"}},
+                "filter": {"range": {"year": {"gte": 2000}}},
+            }
+        },
+        "_source": ["title", "year", "rating"],
+    },
+)
+
+print("Movies with 'the' in the title, released 2000 or later:")
+for hit in resp["hits"]["hits"]:
+    s = hit["_source"]
+    print(f"  {s['title']} ({s['year']})  ★{s['rating']}")
+```
+
+> **What you should see:** Only movies released in 2000 or later that match "the" in the title, ranked by relevance.
+
+### Cell 8 — Exact keyword match (genre filter)
+
+Because `genres` is mapped as `keyword`, exact case-sensitive matching is required.
+
+```python
+resp = es.search(
+    index=INDEX,
+    body={
+        "query": {"term": {"genres": "Sci-Fi"}},
+        "_source": ["title", "genres", "year"],
+    },
+)
+
+print("Sci-Fi movies:")
+for hit in resp["hits"]["hits"]:
+    s = hit["_source"]
+    print(f"  {s['title']} ({s['year']})  {s['genres']}")
+```
+
+> **What you should see:** Only movies whose `genres` array contains the exact string `"Sci-Fi"`.
+>
+> **What just happened?** A `term` query on a `keyword` field is an exact match — no analysis is applied. Searching for `"sci-fi"` or `"sci fi"` would return zero results.
+
+### Cell 9 — Phrase search with slop
+
+A phrase query requires terms to appear in the specified order, within `slop` positions of each other.
+
+```python
+resp = es.search(
+    index=INDEX,
+    body={
+        "query": {
+            "match_phrase": {
+                "plotOutline": {"query": "aging boxer", "slop": 3}
+            }
+        },
+        "_source": ["title"],
+    },
+)
+
+print('Phrase search for "aging boxer" (slop=3):')
+for hit in resp["hits"]["hits"]:
+    print(f"  {hit['_source']['title']}")
+```
+
+> **What you should see:** Pulp Fiction, whose plot outline contains "aging boxer".
+
+### Cell 10 — Update a document
+
+`es.update()` corresponds to `POST /<index>/_update/<id>`. Only the fields listed under `doc` are modified; all other fields are preserved.
+
+```python
+es.update(
+    index=INDEX,
+    id="110912",
+    body={"doc": {"rating": 9.0, "votes": 2100000}},
+)
+
+doc = es.get(index=INDEX, id="110912")
+print(f"Updated rating: {doc['_source']['rating']}")
+print(f"Updated votes:  {doc['_source']['votes']}")
+print(f"Document version: {doc['_version']}")
+```
+
+> **What you should see:** The new rating and vote count, plus an incremented `_version` number.
+>
+> **What just happened?** Internally, Elasticsearch marks the old document version as deleted and writes a new version with the merged fields — updates are always a reindex operation.
+
+### Cell 11 — Aggregations
+
+Aggregations run on `keyword` and numeric fields. Here we group movies by genre and compute average rating per genre.
+
+```python
+resp = es.search(
+    index=INDEX,
+    size=0,  # we only want the aggregation result, not the hits
+    body={
+        "aggs": {
+            "by_genre": {
+                "terms": {"field": "genres", "size": 20},
+                "aggs": {
+                    "avg_rating": {"avg": {"field": "rating"}},
+                    "max_rating": {"max": {"field": "rating"}},
+                },
+            }
+        }
+    },
+)
+
+print(f"{'Genre':<30}  {'Count':>5}  {'Avg ★':>6}  {'Max ★':>6}")
+print("-" * 52)
+for bucket in resp["aggregations"]["by_genre"]["buckets"]:
+    print(
+        f"{bucket['key']:<30}  {bucket['doc_count']:>5}  "
+        f"{bucket['avg_rating']['value']:>6.2f}  "
+        f"{bucket['max_rating']['value']:>6.1f}"
+    )
+```
+
+> **What you should see:** A table of genres with the document count and average/max rating for each genre.
+>
+> **What just happened?** The `terms` aggregation works like a `GROUP BY` — it groups documents by the `genres` keyword field and runs sub-aggregations inside each bucket. `size=0` tells Elasticsearch not to return any matching documents, just the aggregation result.
+
+### Cell 12 — Sort by a field
+
+Sorting on a `text` field raises an error; use the `.raw` keyword sub-field defined in the mapping.
+
+```python
+resp = es.search(
+    index=INDEX,
+    body={
+        "query": {"match_all": {}},
+        "sort":  [{"rating": {"order": "desc"}}, {"title.raw": {"order": "asc"}}],
+        "_source": ["title", "year", "rating"],
+        "size": 6,
+    },
+)
+
+print("Movies sorted by rating desc, then title asc:")
+for hit in resp["hits"]["hits"]:
+    s = hit["_source"]
+    print(f"  ★{s['rating']}  {s['title']} ({s['year']})")
+```
+
+> **What you should see:** All indexed movies ordered by rating descending, ties broken alphabetically by title.
+
+### Cell 13 — Delete a document and verify
+
+```python
+es.delete(index=INDEX, id="0137523")
+es.indices.refresh(index=INDEX)
+
+from elasticsearch import NotFoundError
+try:
+    es.get(index=INDEX, id="0137523")
+except NotFoundError:
+    print("Fight Club deleted — document not found.")
+
+count = es.count(index=INDEX)["count"]
+print(f"Remaining documents: {count}")
+```
+
+> **What you should see:** `Fight Club deleted — document not found.` and a count of 5 remaining movies.
+
+### Cell 14 — Bulk indexing
+
+The Bulk API sends many index/delete operations in a single HTTP request — the most efficient way to load large datasets.
+
+```python
+from elasticsearch.helpers import bulk
+
+additional_movies = [
+    {"id": "0111161", "title": "The Shawshank Redemption", "year": 1994, "genres": ["Drama"],                               "rating": 9.2, "rank": 1},
+    {"id": "0071562", "title": "The Godfather: Part II",    "year": 1974, "genres": ["Crime", "Drama"],                      "rating": 9.0, "rank": 3},
+    {"id": "0468569", "title": "The Dark Knight",           "year": 2008, "genres": ["Action", "Crime", "Drama", "Thriller"],"rating": 9.0, "rank": 4},
+    {"id": "1375666", "title": "Inception",                 "year": 2010, "genres": ["Action", "Adventure", "Sci-Fi", "Thriller"], "rating": 8.7, "rank": 15},
+    {"id": "0816692", "title": "Interstellar",              "year": 2014, "genres": ["Adventure", "Drama", "Sci-Fi"],        "rating": 8.5, "rank": 32},
+    {"id": "0088763", "title": "Back to the Future",        "year": 1985, "genres": ["Adventure", "Comedy", "Sci-Fi"],       "rating": 8.5, "rank": 42},
+    {"id": "0109830", "title": "Forrest Gump",              "year": 1994, "genres": ["Drama", "Romance"],                    "rating": 8.7, "rank": 13},
+    {"id": "0172495", "title": "Gladiator",                 "year": 2000, "genres": ["Action", "Adventure", "Drama"],        "rating": 8.5, "rank": 48},
+]
+
+actions = [
+    {"_index": INDEX, "_id": m["id"], "_source": m}
+    for m in additional_movies
+]
+
+success, failed = bulk(es, actions)
+es.indices.refresh(index=INDEX)
+print(f"Bulk indexed: {success} succeeded, {failed} failed.")
+print(f"Total documents: {es.count(index=INDEX)['count']}")
+```
+
+> **What you should see:** `Bulk indexed: 8 succeeded, 0 failed.` and a total document count of 13.
+>
+> **What just happened?** The `bulk()` helper batches all the index operations into a single HTTP request, dramatically reducing round-trip overhead compared to calling `es.index()` once per document.
+
+### Cell 15 — Cleaning up
+
+```python
+es.indices.delete(index=INDEX)
+print(f"Index '{INDEX}' deleted.")
+```
+
+> **What you should see:** `Index 'movies' deleted.` — the index and all its documents have been removed.
