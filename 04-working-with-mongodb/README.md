@@ -1125,3 +1125,436 @@ db.movies.deleteMany( { "plotOutline": { $exists: false} } )
 > **What you should see:** A result object with `deletedCount` equal to the number of documents that had no `plotOutline` field — the 48 minimal movie documents inserted with `insertMany`.
 
 ## Using the Python API with MongoDB
+
+The `pymongo` library is the official Python driver for MongoDB. In this section we will connect to MongoDB from the **Jupyter** environment and reproduce the same operations we performed with `mongosh` — inserting documents, querying with selectors, updating, running aggregation pipelines, and more.
+
+Open a browser and navigate to <http://dataplatform:28888> and log in with token `abc123!`.
+
+Create a new Python 3 notebook by clicking on the **Python 3 (ipykernel)** widget and work through the cells below in order.
+
+### Cell 1 — Install the library
+
+```python
+import sys
+!{sys.executable} -m pip install pymongo
+```
+
+> **What you should see:** pip output ending with `Successfully installed pymongo-...`.
+
+### Cell 2 — Connect to MongoDB
+
+```python
+from pymongo import MongoClient
+
+client = MongoClient('mongodb://root:abc123!@mongo-1:27017/')
+db = client['filmdb']
+
+print(client.server_info()['version'])
+```
+
+> **What you should see:** The MongoDB server version string (e.g. `8.2.7`), confirming a successful connection.
+
+`client['filmdb']` switches to the `filmdb` database. Like `mongosh`, the database is created lazily on the first write.
+
+### Cell 3 — Insert movie documents
+
+```python
+db.movies.drop()
+
+# Insert a full-detail movie document
+result = db.movies.insert_one({
+    "id": "0110912",
+    "title": "Pulp Fiction",
+    "year": 1994,
+    "runtime": 154,
+    "languages": ["en", "es", "fr"],
+    "rating": 8.9,
+    "votes": 2084331,
+    "genres": ["Crime", "Drama"],
+    "plotOutline": (
+        "Jules Winnfield and Vincent Vega are two hit men who are out to retrieve a suitcase "
+        "stolen from their employer, mob boss Marsellus Wallace. Butch Coolidge is an aging boxer "
+        "who is paid by Wallace to lose his fight. The lives of these seemingly unrelated people "
+        "are woven together comprising a series of funny, bizarre and uncalled-for incidents."
+    ),
+    "coverUrl": "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SY150_CR1,0,101,150_.jpg",
+    "actors": [
+        {"actorID": "0000619", "name": "Tim Roth"},
+        {"actorID": "0001625", "name": "Amanda Plummer"},
+        {"actorID": "0000237", "name": "John Travolta"},
+        {"actorID": "0000168", "name": "Samuel L. Jackson"},
+        {"actorID": "0000246", "name": "Bruce Willis"},
+        {"actorID": "0000235", "name": "Uma Thurman"},
+        {"actorID": "0000233", "name": "Quentin Tarantino"},
+    ],
+    "directors": [{"directorID": "0000233", "name": "Quentin Tarantino"}],
+    "producers": [
+        {"producerID": "0004744", "name": "Lawrence Bender"},
+        {"producerID": "0787834", "name": "Michael Shamberg"},
+        {"producerID": "0792049", "name": "Stacey Sher"},
+    ],
+})
+print(f"Inserted Pulp Fiction with _id: {result.inserted_id}")
+
+result = db.movies.insert_one({
+    "id": "0133093",
+    "title": "The Matrix",
+    "year": 1999,
+    "runtime": 136,
+    "languages": ["en"],
+    "rating": 8.7,
+    "votes": 1496538,
+    "genres": ["Action", "Sci-Fi"],
+    "plotOutline": (
+        "Thomas A. Anderson is a man living two lives. By day he is an average computer programmer "
+        "and by night a hacker known as Neo. Morpheus awakens Neo to the real world, a ravaged "
+        "wasteland where most of humanity have been captured by a race of machines."
+    ),
+    "coverUrl": "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX101_CR0,0,101,150_.jpg",
+    "actors": [
+        {"actorID": "0000206", "name": "Keanu Reeves"},
+        {"actorID": "0000401", "name": "Laurence Fishburne"},
+        {"actorID": "0005251", "name": "Carrie-Anne Moss"},
+        {"actorID": "0915989", "name": "Hugo Weaving"},
+    ],
+    "directors": [
+        {"directorID": "0905154", "name": "Lana Wachowski"},
+        {"directorID": "0905152", "name": "Lilly Wachowski"},
+    ],
+    "producers": [{"producerID": "0075732", "name": "Bruce Berman"}],
+})
+print(f"Inserted The Matrix with _id: {result.inserted_id}")
+```
+
+> **What you should see:** Two lines confirming the `_id` of each inserted document.
+>
+> **What just happened?** `insert_one()` sends the document to MongoDB, which assigns an auto-generated `ObjectId` as the `_id` field and returns it in the result.
+
+### Cell 4 — Bulk insert with insertMany
+
+```python
+top_movies = [
+    {"id": "0111161", "title": "The Shawshank Redemption", "genres": ["Drama"],                               "year": 1994, "rating": 9.2, "rank": 1},
+    {"id": "0068646", "title": "The Godfather",             "genres": ["Crime", "Drama"],                      "year": 1972, "rating": 9.2, "rank": 2},
+    {"id": "0071562", "title": "The Godfather: Part II",    "genres": ["Crime", "Drama"],                      "year": 1974, "rating": 9.0, "rank": 3},
+    {"id": "0468569", "title": "The Dark Knight",           "genres": ["Action", "Crime", "Drama", "Thriller"],"year": 2008, "rating": 9.0, "rank": 4},
+    {"id": "0050083", "title": "12 Angry Men",              "genres": ["Drama"],                               "year": 1957, "rating": 8.9, "rank": 5},
+    {"id": "0108052", "title": "Schindler's List",          "genres": ["Biography", "Drama", "History"],       "year": 1993, "rating": 8.9, "rank": 6},
+    {"id": "0167260", "title": "The Lord of the Rings: The Return of the King", "genres": ["Adventure", "Drama", "Fantasy"], "year": 2003, "rating": 8.9, "rank": 7},
+    {"id": "0060196", "title": "The Good, the Bad and the Ugly", "genres": ["Western"],                        "year": 1966, "rating": 8.8, "rank": 9},
+    {"id": "0137523", "title": "Fight Club",                "genres": ["Drama"],                               "year": 1999, "rating": 8.8, "rank": 10},
+    {"id": "4154796", "title": "Avengers: Endgame",         "genres": ["Action", "Adventure", "Fantasy", "Sci-Fi"], "year": 2019, "rating": 8.8, "rank": 11},
+    {"id": "0120737", "title": "The Lord of the Rings: The Fellowship of the Ring", "genres": ["Adventure", "Drama", "Fantasy"], "year": 2001, "rating": 8.8, "rank": 12},
+    {"id": "0109830", "title": "Forrest Gump",              "genres": ["Drama", "Romance"],                    "year": 1994, "rating": 8.7, "rank": 13},
+    {"id": "0080684", "title": "Star Wars: Episode V - The Empire Strikes Back", "genres": ["Action", "Adventure", "Fantasy", "Sci-Fi"], "year": 1980, "rating": 8.7, "rank": 14},
+    {"id": "1375666", "title": "Inception",                 "genres": ["Action", "Adventure", "Sci-Fi", "Thriller"], "year": 2010, "rating": 8.7, "rank": 15},
+    {"id": "0167261", "title": "The Lord of the Rings: The Two Towers", "genres": ["Adventure", "Drama", "Fantasy"], "year": 2002, "rating": 8.7, "rank": 16},
+    {"id": "0073486", "title": "One Flew Over the Cuckoo's Nest", "genres": ["Drama"],                         "year": 1975, "rating": 8.7, "rank": 17},
+    {"id": "0099685", "title": "Goodfellas",                "genres": ["Biography", "Crime", "Drama"],         "year": 1990, "rating": 8.7, "rank": 18},
+    {"id": "0047478", "title": "Seven Samurai",             "genres": ["Adventure", "Drama"],                  "year": 1954, "rating": 8.6, "rank": 20},
+    {"id": "0114369", "title": "Se7en",                     "genres": ["Crime", "Drama", "Mystery", "Thriller"], "year": 1995, "rating": 8.6, "rank": 21},
+    {"id": "0317248", "title": "City of God",               "genres": ["Crime", "Drama"],                      "year": 2002, "rating": 8.6, "rank": 22},
+    {"id": "0076759", "title": "Star Wars: Episode IV - A New Hope", "genres": ["Action", "Adventure", "Fantasy", "Sci-Fi"], "year": 1977, "rating": 8.6, "rank": 23},
+    {"id": "0102926", "title": "The Silence of the Lambs",  "genres": ["Crime", "Drama", "Thriller"],          "year": 1991, "rating": 8.6, "rank": 24},
+    {"id": "0038650", "title": "It's a Wonderful Life",     "genres": ["Drama", "Family", "Fantasy"],          "year": 1946, "rating": 8.6, "rank": 25},
+    {"id": "0118799", "title": "Life Is Beautiful",         "genres": ["Comedy", "Drama", "Romance", "War"],   "year": 1997, "rating": 8.6, "rank": 26},
+    {"id": "0245429", "title": "Spirited Away",             "genres": ["Animation", "Adventure", "Family", "Fantasy", "Mystery"], "year": 2001, "rating": 8.5, "rank": 27},
+    {"id": "0120815", "title": "Saving Private Ryan",       "genres": ["Drama", "War"],                        "year": 1998, "rating": 8.5, "rank": 28},
+    {"id": "0114814", "title": "The Usual Suspects",        "genres": ["Crime", "Mystery", "Thriller"],        "year": 1995, "rating": 8.5, "rank": 29},
+    {"id": "0110413", "title": "Léon: The Professional",   "genres": ["Action", "Crime", "Drama", "Thriller"],"year": 1994, "rating": 8.5, "rank": 30},
+    {"id": "0120689", "title": "The Green Mile",            "genres": ["Crime", "Drama", "Fantasy", "Mystery"],"year": 1999, "rating": 8.5, "rank": 31},
+    {"id": "0816692", "title": "Interstellar",              "genres": ["Adventure", "Drama", "Sci-Fi"],        "year": 2014, "rating": 8.5, "rank": 32},
+    {"id": "0054215", "title": "Psycho",                    "genres": ["Horror", "Mystery", "Thriller"],       "year": 1960, "rating": 8.5, "rank": 33},
+    {"id": "0120586", "title": "American History X",        "genres": ["Drama"],                               "year": 1998, "rating": 8.5, "rank": 34},
+    {"id": "0021749", "title": "City Lights",               "genres": ["Comedy", "Drama", "Romance"],          "year": 1931, "rating": 8.5, "rank": 35},
+    {"id": "0034583", "title": "Casablanca",                "genres": ["Drama", "Romance", "War"],             "year": 1942, "rating": 8.5, "rank": 36},
+    {"id": "0064116", "title": "Once Upon a Time in the West", "genres": ["Western"],                          "year": 1968, "rating": 8.5, "rank": 37},
+    {"id": "0253474", "title": "The Pianist",               "genres": ["Biography", "Drama", "Music", "War"],  "year": 2002, "rating": 8.5, "rank": 38},
+    {"id": "0027977", "title": "Modern Times",              "genres": ["Comedy", "Drama", "Family", "Romance"],"year": 1936, "rating": 8.5, "rank": 39},
+    {"id": "1675434", "title": "The Intouchables",          "genres": ["Biography", "Comedy", "Drama"],        "year": 2011, "rating": 8.5, "rank": 40},
+    {"id": "0407887", "title": "The Departed",              "genres": ["Crime", "Drama", "Thriller"],          "year": 2006, "rating": 8.5, "rank": 41},
+    {"id": "0088763", "title": "Back to the Future",        "genres": ["Adventure", "Comedy", "Sci-Fi"],       "year": 1985, "rating": 8.5, "rank": 42},
+    {"id": "0103064", "title": "Terminator 2: Judgment Day","genres": ["Action", "Sci-Fi"],                    "year": 1991, "rating": 8.5, "rank": 43},
+    {"id": "2582802", "title": "Whiplash",                  "genres": ["Drama", "Music"],                      "year": 2014, "rating": 8.5, "rank": 44},
+    {"id": "0110357", "title": "The Lion King",             "genres": ["Animation", "Adventure", "Drama", "Family", "Musical"], "year": 1994, "rating": 8.5, "rank": 45},
+    {"id": "0047396", "title": "Rear Window",               "genres": ["Mystery", "Thriller"],                 "year": 1954, "rating": 8.5, "rank": 46},
+    {"id": "0082971", "title": "Raiders of the Lost Ark",   "genres": ["Action", "Adventure"],                 "year": 1981, "rating": 8.5, "rank": 47},
+    {"id": "0172495", "title": "Gladiator",                 "genres": ["Action", "Adventure", "Drama"],        "year": 2000, "rating": 8.5, "rank": 48},
+    {"id": "0482571", "title": "The Prestige",              "genres": ["Drama", "Mystery", "Sci-Fi", "Thriller"], "year": 2006, "rating": 8.5, "rank": 49},
+    {"id": "0078788", "title": "Apocalypse Now",            "genres": ["Drama", "War"],                        "year": 1979, "rating": 8.4, "rank": 50},
+]
+
+result = db.movies.insert_many(top_movies)
+print(f"Inserted {len(result.inserted_ids)} additional movies.")
+print(f"Total movies: {db.movies.count_documents({})}")
+```
+
+> **What you should see:** `Inserted 48 additional movies.` and `Total movies: 50`.
+
+### Cell 5 — Query with selectors
+
+```python
+# All Action movies released in 2010 or later
+cursor = db.movies.find({"genres": "Action", "year": {"$gte": 2010}})
+print("Action movies from 2010 onward:")
+for doc in cursor:
+    print(f"  {doc['title']} ({doc['year']})  ★{doc['rating']}")
+
+print()
+
+# Movies with a plot outline (only the full-detail ones)
+count = db.movies.count_documents({"plotOutline": {"$exists": True}})
+print(f"Movies with a plot outline: {count}")
+
+print()
+
+# Movies in Family OR Animation genres
+cursor = db.movies.find({"genres": {"$in": ["Family", "Animation"]}}, {"title": 1, "genres": 1, "_id": 0})
+print("Family or Animation movies:")
+for doc in cursor:
+    print(f"  {doc['title']}  {doc['genres']}")
+```
+
+> **What you should see:** Action movies from 2010 onward, the count of movies with a plot outline, and all Family or Animation movies.
+
+### Cell 6 — Projection (select specific fields)
+
+```python
+# Return only title and rating — suppress _id
+cursor = db.movies.find(
+    {"rating": {"$gte": 9.0}},
+    {"title": 1, "rating": 1, "year": 1, "_id": 0}
+).sort("rating", -1)
+
+print("Movies rated 9.0 or above:")
+for doc in cursor:
+    print(f"  {doc['title']} ({doc['year']})  ★{doc['rating']}")
+```
+
+```
+Movies rated 9.0 or above:
+  The Shawshank Redemption (1994)  ★9.2
+  The Godfather (1972)  ★9.2
+  The Dark Knight (2008)  ★9.0
+  The Godfather: Part II (1974)  ★9.0
+```
+
+> **What you should see:** Only the four highest-rated movies with title, year, and rating — no `_id` and no other fields.
+>
+> **What just happened?** The second argument to `find()` is a projection document. `1` includes a field; `0` excludes it. Mixing inclusions and exclusions is not allowed except for `_id`, which can always be explicitly suppressed with `"_id": 0`.
+
+### Cell 7 — Update documents
+
+```python
+from pymongo import ReturnDocument
+
+# $set — change a specific field
+result = db.movies.update_one(
+    {"title": "Fight Club"},
+    {"$set": {"rating": 9.0}}
+)
+print(f"Fight Club updated: matched={result.matched_count}, modified={result.modified_count}")
+
+# $inc — atomically increment a numeric field
+result = db.movies.update_one(
+    {"title": "The Matrix"},
+    {"$inc": {"votes": 1}}
+)
+doc = db.movies.find_one({"title": "The Matrix"}, {"votes": 1, "_id": 0})
+print(f"The Matrix votes after increment: {doc['votes']}")
+
+# $push — append to an array field (add a genre)
+db.movies.update_one(
+    {"title": "The Matrix"},
+    {"$push": {"genres": "Cyberpunk"}}
+)
+doc = db.movies.find_one({"title": "The Matrix"}, {"genres": 1, "_id": 0})
+print(f"The Matrix genres after push: {doc['genres']}")
+```
+
+> **What you should see:** Confirmation lines for each update, then the incremented vote count and updated genres array for The Matrix.
+>
+> **What just happened?** `$set` changes only the named field; `$inc` adds to a numeric field atomically; `$push` appends an element to an array. All other fields in the document are left untouched.
+
+### Cell 8 — Indexes
+
+```python
+from pymongo import ASCENDING, TEXT
+
+# Create a regular ascending index on title
+db.movies.create_index([("title", ASCENDING)], name="title_1")
+
+# Create a unique index on our id field
+db.movies.create_index([("id", ASCENDING)], unique=True, name="id_1")
+
+# Create a text index covering title and plotOutline
+db.movies.create_index([("title", TEXT), ("plotOutline", TEXT)], name="text_idx")
+
+# List all indexes
+for idx in db.movies.list_indexes():
+    print(idx["name"])
+```
+
+```
+_id_
+title_1
+id_1
+text_idx
+```
+
+> **What you should see:** The four indexes — the auto-created `_id_` plus the three you just added.
+
+### Cell 9 — Text search
+
+```python
+# Search for movies whose title or plotOutline contains "fight"
+cursor = db.movies.find(
+    {"$text": {"$search": "fight"}},
+    {"title": 1, "_id": 0}
+)
+print('Text search for "fight":')
+for doc in cursor:
+    print(f"  {doc['title']}")
+
+print()
+
+# Search for either "fight" or "terrorist"
+cursor = db.movies.find(
+    {"$text": {"$search": "fight terrorist"}},
+    {"title": 1, "_id": 0}
+)
+print('Text search for "fight terrorist":')
+for doc in cursor:
+    print(f"  {doc['title']}")
+```
+
+```
+Text search for "fight":
+  Fight Club
+  Pulp Fiction
+
+Text search for "fight terrorist":
+  Fight Club
+  Pulp Fiction
+  The Matrix
+```
+
+> **What you should see:** "Fight Club" matched by title; "Pulp Fiction" matched because "fight" appears in its plot outline; "The Matrix" added when searching for "terrorist" (used in its plot outline).
+
+### Cell 10 — Aggregation pipeline
+
+```python
+# Count movies per genre for films released after 2000,
+# with min/max/avg rating, sorted by movie count descending
+pipeline = [
+    {"$match": {"year": {"$gt": 2000}}},
+    {"$unwind": "$genres"},
+    {"$group": {
+        "_id": "$genres",
+        "count":     {"$sum": 1},
+        "minRating": {"$min": "$rating"},
+        "maxRating": {"$max": "$rating"},
+        "avgRating": {"$avg": "$rating"},
+    }},
+    {"$sort": {"count": -1}},
+    {"$limit": 8},
+]
+
+print(f"{'Genre':<15}  {'Count':>5}  {'Min':>5}  {'Max':>5}  {'Avg':>6}")
+print("-" * 45)
+for doc in db.movies.aggregate(pipeline):
+    print(f"{doc['_id']:<15}  {doc['count']:>5}  {doc['minRating']:>5}  {doc['maxRating']:>5}  {doc['avgRating']:>6.2f}")
+```
+
+```
+Genre            Count    Min    Max     Avg
+---------------------------------------------
+Drama               11    8.5    9.0    8.64
+Adventure            7    8.5    8.9    8.70
+Fantasy              5    8.5    8.9    8.74
+Sci-Fi               4    8.5    8.8    8.63
+Thriller             4    8.5    9.0    8.68
+Crime                3    8.5    9.0    8.70
+Action               3    8.7    9.0    8.83
+Biography            2    8.5    8.5    8.50
+```
+
+> **What you should see:** The top 8 genres for post-2000 movies, with rating statistics and sorted by movie count.
+>
+> **What just happened?** The pipeline stages are: `$match` (filter to post-2000 movies), `$unwind` (flatten the genres array so each genre gets its own document), `$group` (aggregate statistics per genre), `$sort` (order by count descending), `$limit` (return only the top 8). Each stage transforms the stream of documents before passing it to the next.
+
+### Cell 11 — Delete documents
+
+```python
+# Delete a single document by title
+result = db.movies.delete_one({"title": "Fight Club"})
+print(f"deleteOne Fight Club: deletedCount={result.deleted_count}")
+
+# Delete all minimal movies (those without a plotOutline)
+result = db.movies.delete_many({"plotOutline": {"$exists": False}})
+print(f"deleteMany (no plotOutline): deletedCount={result.deleted_count}")
+
+print(f"Remaining movies: {db.movies.count_documents({})}")
+```
+
+> **What you should see:** `deletedCount=1` for the Fight Club removal, then the count for the bulk deletion, and finally `Remaining movies: 2` (only Pulp Fiction and The Matrix remain).
+
+### Cell 12 — Insert and query persons
+
+```python
+db.persons.drop()
+
+persons = [
+    {
+        "id": "0000246", "name": "Bruce Willis",
+        "birthDate": "1955-03-19",
+        "tradeMarks": ["Sardonic one-liners", "Shaven head", "Distinctive, gravelly voice"],
+        "actedInMovies": [
+            {"movieId": "0110912", "title": "Pulp Fiction"},
+            {"movieId": "1606378", "title": "A Good Day to Die Hard"},
+            {"movieId": "0217869", "title": "Unbreakable"},
+        ],
+    },
+    {
+        "id": "0000206", "name": "Keanu Reeves",
+        "birthDate": "1964-09-02",
+        "tradeMarks": ["Intense contemplative gaze", "Deep husky voice"],
+        "actedInMovies": [
+            {"movieId": "0133093", "title": "The Matrix"},
+            {"movieId": "0234215", "title": "The Matrix Reloaded"},
+            {"movieId": "0111257", "title": "Speed"},
+        ],
+    },
+    {
+        "id": "0000113", "name": "Sandra Bullock",
+        "birthDate": "1964-07-26",
+        "actedInMovies": [
+            {"movieId": "2737304", "title": "Bird Box"},
+            {"movieId": "0111257", "title": "Speed"},
+            {"movieId": "0212346", "title": "Miss Congeniality"},
+        ],
+    },
+]
+
+db.persons.insert_many(persons)
+print(f"Inserted {db.persons.count_documents({})} persons.")
+
+# Find all movies Bruce Willis acted in
+doc = db.persons.find_one({"name": "Bruce Willis"})
+print(f"\n{doc['name']} filmography:")
+for movie in doc["actedInMovies"]:
+    print(f"  {movie['title']}")
+```
+
+> **What you should see:** The count of inserted persons followed by Bruce Willis's filmography from the embedded `actedInMovies` array.
+
+### Cell 13 — Cleaning up
+
+```python
+db.movies.drop()
+db.persons.drop()
+client.close()
+print("Collections dropped and connection closed.")
+```
+
+> **What you should see:** `Collections dropped and connection closed.` — all workshop documents have been removed and the driver connection is released.
