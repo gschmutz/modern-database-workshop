@@ -40,7 +40,7 @@ docker exec -ti cassandra-1 cqlsh -u cassandra -p cassandra
 
 This will connect you into the `cassandra-1` container and run the `cqlsh` inside id. You should see an output similar to this one.
 
-```
+```sql
 bigdata@bigdata:~$ docker exec -ti cassandra-1 cqlsh-u cassandra -p cassandra
 Warning: Using a password on the command line interface can be insecure.
 Recommendation: use the credentials file to securely provide the password.
@@ -65,7 +65,7 @@ SELECT * FROM system_schema.keyspaces;
 
 and you should see the currently existing keyspaces as the results
 
-```
+```sql
 cqlsh> SELECT * FROM system_schema.keyspaces;
 
  keyspace_name      | durable_writes | replication
@@ -156,7 +156,7 @@ Keyspace in Cassandra is the equivalent of database/schema in relational databas
 
 Either use the Cassandra CLI or DbGate to execute the statements in this workshop. 
 
-```
+```sql
 CREATE KEYSPACE movies WITH replication =
   {'class':'SimpleStrategy','replication_factor':1};
 ```
@@ -173,7 +173,7 @@ Replication factor = 1 means there will be single copy of a row on a particular 
 
 To be able to work with tables, you need to use your keyspace, as shown in the following statement:
 
-```
+```sql
 USE movies;
 ```
 
@@ -183,13 +183,13 @@ Another option is to prefix the table name with the keyspace name in all queries
 
 At any time, you can `DESCRIBE` the keyspace, use the following command to do that:
 
-```
+```sql
 DESCRIBE KEYSPACE movies;
 ```
 
 and you should see an output similar to the one shown below
 
-```
+```sql
 CREATE KEYSPACE movies WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}  AND durable_writes = true;
 ```
 
@@ -197,7 +197,7 @@ If you wish to list all keyspaces present in the database, a Cassandra reserve k
 
 Enter the following command:
 
-```
+```sql
 SELECT * FROM system_schema.keyspaces;
 ```
 
@@ -222,7 +222,7 @@ The output of this command looks as follows:
 
 Run the following statement for creating a table called user. For those who are acquainted with SQL, the following syntax should look very familiar and almost identical. Even some of the naming conventions as well as formatting guidelines can be reused.
 
-```
+```sql
 DROP TABLE IF EXISTS movies.movie;
 CREATE TABLE movies.movie (movie_id int,
 	title text,				// title
@@ -243,7 +243,7 @@ CREATE TABLE movies.movie (movie_id int,
 
 This creates a first static column family (table) in Cassandra. Now do the same for the Actor table.
 
-```
+```sql
 DROP TABLE IF EXISTS movies.actor;
 CREATE TABLE movies.actor (actor_id int,
   name text,					// name
@@ -259,7 +259,7 @@ CREATE TABLE movies.actor (actor_id int,
 
 You can view a table metadata using the `DESCRIBE` command, as shown in the following statement
 
-```
+```sql
 DESCRIBE TABLE movie;
 DESCRIBE TABLE actor;
 ```
@@ -270,7 +270,7 @@ In Cassandra, an INSERT operation is actually an "Upsert" (UPDATE or INSERT), wh
 
 First lets add the movie "The Matrix" and "Pulp Fiction"
 
-```
+```sql
 // insert "The Matrix" - 0133093
 INSERT INTO movies.movie (movie_id, title, release_year, running_time, languages,
                    genres, plot_outline, cover_url, top250_rank)
@@ -319,7 +319,7 @@ Now let's also add some actors playing in these 2 movies.
 
 Let's add the actor "Bruce Willis", "John Travolta", "Sandra Bullock", "Samuel L. Jackson", "Uma Thurman" & "Quentin Tarantino"
 
-```
+```sql
 // insert "Bruce Willis" - 0000246
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000246,
@@ -418,7 +418,7 @@ VALUES (0000233,
 
 SELECT command lists content of a table; a filter can be applied using the WHERE clause:
 
-```
+```sql
 SELECT movie_id, title
 FROM movies.movie;
 ```
@@ -427,7 +427,7 @@ FROM movies.movie;
 
 We can also select all columns as shown here for the Actor table:
 
-```
+```sql
 SELECT *
 FROM movies.actor;
 ```
@@ -440,7 +440,7 @@ The answer to the preceding questions is—although CQL gives you a nice looking
 
 Try what happens if you try to restrict on another column, such the `name` of the actor.
 
-```
+```sql
 SELECT *
 FROM movies.actor
 WHERE name = 'Bruce Willis';
@@ -454,7 +454,7 @@ InvalidRequest: Error from server: code=2200 [Invalid query] message="Cannot exe
 
 Cassandra does not allow to restrict on another column than the primary key. Let's see if that is true. When we use the `actor_id` instead the query will work.
 
-```
+```sql
 SELECT *
 FROM movies.actor
 WHERE actor_id = 0000246;
@@ -464,7 +464,7 @@ WHERE actor_id = 0000246;
 
 As hinted in the exception, you can force Cassandra to execute a restriction on a non-primary column by adding the `ALLOW FILTERING` clause.
 
-```
+```sql
 SELECT *
 FROM movies.actor
 WHERE name = 'Bruce Willis'
@@ -930,6 +930,466 @@ WHERE movie_id = 0110912 AND year = 2019 AND month >= 01 AND month <= 5;
 
 > **What you should see:** The rows with view counts for Pulp Fiction for each month from January through May 2019.
 
-
 ## Using the Python API with Cassandra
 
+The `cassandra-driver` library is the official Python client for Apache Cassandra. In this section we will connect to Cassandra from the **Jupyter** environment and reproduce the same operations we performed with `cqlsh` — inserting movies and actors, querying wide-row tables, and incrementing counter columns.
+
+Open a browser and navigate to <http://dataplatform:28888> and log in with token `abc123!`.
+
+Create a new Python 3 notebook by clicking on the **Python 3 (ipykernel)** widget and work through the cells below in order.
+
+### Cell 1 — Install the library
+
+```python
+import sys
+!{sys.executable} -m pip install cassandra-driver
+```
+
+> **What you should see:** pip output ending with `Successfully installed cassandra-driver-...`.
+
+### Cell 2 — Connect to Cassandra
+
+```python
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
+
+auth = PlainTextAuthProvider(username='cassandra', password='cassandra')
+cluster = Cluster(['cassandra-1'], port=9042, auth_provider=auth)
+session = cluster.connect()
+
+print(session.execute("SELECT release_version FROM system.local").one().release_version)
+```
+
+> **What you should see:** The Cassandra version string (e.g. `5.0.4`), confirming a successful connection.
+
+### Cell 3 — Create the keyspace and tables
+
+```python
+session.execute("""
+    CREATE KEYSPACE IF NOT EXISTS movies
+    WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+""")
+
+session.set_keyspace('movies')
+
+session.execute("DROP TABLE IF EXISTS movies.movie")
+session.execute("""
+    CREATE TABLE movies.movie (
+        movie_id     int,
+        title        text,
+        release_year int,
+        running_time int,
+        languages    set<text>,
+        genres       set<text>,
+        plot_outline text,
+        cover_url    text,
+        top250_rank  int,
+        PRIMARY KEY (movie_id)
+    )
+""")
+
+session.execute("DROP TABLE IF EXISTS movies.actor")
+session.execute("""
+    CREATE TABLE movies.actor (
+        actor_id       int,
+        name           text,
+        headshot_url   text,
+        mini_biography text,
+        birth_date     text,
+        trade_mark     list<text>,
+        PRIMARY KEY (actor_id)
+    )
+""")
+
+session.execute("DROP TABLE IF EXISTS movies.movies_by_actor")
+session.execute("""
+    CREATE TABLE movies.movies_by_actor (
+        actor_id int,
+        movie_id int,
+        title    text,
+        PRIMARY KEY (actor_id, movie_id)
+    )
+""")
+
+session.execute("DROP TABLE IF EXISTS movies.actors_by_movie")
+session.execute("""
+    CREATE TABLE movies.actors_by_movie (
+        movie_id int,
+        title    text STATIC,
+        actor_id int,
+        name     text,
+        PRIMARY KEY (movie_id, actor_id)
+    )
+""")
+
+session.execute("DROP TABLE IF EXISTS movies.rating_by_movie")
+session.execute("""
+    CREATE TABLE movies.rating_by_movie (
+        movie_id   int,
+        one_star   counter,
+        two_star   counter,
+        three_star counter,
+        four_star  counter,
+        five_star  counter,
+        PRIMARY KEY (movie_id)
+    )
+""")
+
+session.execute("DROP TABLE IF EXISTS movies.movie_viewed_by_time")
+session.execute("""
+    CREATE TABLE movies.movie_viewed_by_time (
+        movie_id int,
+        year     int,
+        month    int,
+        male     counter,
+        female   counter,
+        PRIMARY KEY (movie_id, year, month)
+    ) WITH CLUSTERING ORDER BY (year DESC, month DESC)
+""")
+
+print("All tables created.")
+```
+
+> **What you should see:** `All tables created.` — the keyspace and six tables have been set up.
+
+### Cell 4 — Insert movies
+
+Prepared statements are the recommended way to insert data — they are parsed once by the server and reused for each execution, improving both performance and safety.
+
+```python
+insert_movie = session.prepare("""
+    INSERT INTO movies.movie
+        (movie_id, title, release_year, running_time, languages, genres, plot_outline, cover_url, top250_rank)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+""")
+
+movies = [
+    (
+        133093, 'The Matrix', 1999, 136,
+        {'en'},
+        {'Action', 'Sci-Fi'},
+        'Thomas A. Anderson is a man living two lives. By day he is an average computer programmer '
+        'and by night a hacker known as Neo.',
+        'https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX101_CR0,0,101,150_.jpg',
+        19,
+    ),
+    (
+        110912, 'Pulp Fiction', 1994, 154,
+        {'en', 'es', 'fr'},
+        {'Crime', 'Drama'},
+        'Jules Winnfield and Vincent Vega are two hit men who are out to retrieve a suitcase '
+        'stolen from their employer, mob boss Marsellus Wallace.',
+        'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SY150_CR1,0,101,150_.jpg',
+        8,
+    ),
+    (
+        111257, 'Speed', 1994, 116,
+        {'en'},
+        {'Action', 'Adventure', 'Crime', 'Thriller'},
+        'Bomber extortionist rigs a bomb to a LA city bus: once armed it must stay above 50 mph.',
+        'https://m.media-amazon.com/images/M/MV5BYjc0MjYyN2EtZGRhMy00NzJiLWI2Y2QtYzhiYTU3NzAxNzg4XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SY150_CR0,0,101,150_.jpg',
+        None,
+    ),
+]
+
+for row in movies:
+    session.execute(insert_movie, row)
+
+print(f"Inserted {len(movies)} movies.")
+```
+
+> **What you should see:** `Inserted 3 movies.`
+
+### Cell 5 — Insert actors
+
+```python
+insert_actor = session.prepare("""
+    INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
+    VALUES (?, ?, ?, ?, ?)
+""")
+
+actors = [
+    (
+        246, 'Bruce Willis',
+        'https://m.media-amazon.com/images/M/MV5BMjA0MjMzMTE5OF5BMl5BanBnXkFtZTcwMzQ2ODE3Mw@@._V1_UY98_CR8,0,67,98_AL_.jpg',
+        '1955-03-19',
+        ['Frequently plays a man who suffered a tragedy',
+         'Headlines action-adventures, often playing a policeman, hitman or someone in the military',
+         'Sardonic one-liners', 'Shaven head', 'Distinctive, gravelly voice'],
+    ),
+    (
+        237, 'John Travolta',
+        'https://m.media-amazon.com/images/M/MV5BMTUwNjQ0ODkxN15BMl5BanBnXkFtZTcwMDc5NjQwNw@@._V1_UY98_CR3,0,67,98_AL_.jpg',
+        '1954-02-18',
+        ['Cleft chin and razor-sharp cheekbones', 'Often works some sort of dance into his roles'],
+    ),
+    (
+        113, 'Sandra Bullock',
+        'https://m.media-amazon.com/images/M/MV5BMTI5NDY5NjU3NF5BMl5BanBnXkFtZTcwMzQ0MTMyMw@@._V1_UX67_CR0,0,67,98_AL_.jpg',
+        '1964-07-26',
+        None,
+    ),
+    (
+        168, 'Samuel L. Jackson',
+        'https://m.media-amazon.com/images/M/MV5BMTQ1NTQwMTYxNl5BMl5BanBnXkFtZTYwMjA1MzY1._V1_UX67_CR0,0,67,98_AL_.jpg',
+        '1948-12-21',
+        ['Deep authoritative voice', 'Frequently plays tough characters who swear a lot',
+         'Frequently cast by Quentin Tarantino'],
+    ),
+    (
+        206, 'Keanu Reeves',
+        'https://m.media-amazon.com/images/M/MV5BNjUxNDcwMTg4Ml5BMl5BanBnXkFtZTcwMjU4NDYyOA@@._V1_UY98_CR4,0,67,98_AL_.jpg',
+        '1964-09-02',
+        ['Intense contemplative gaze', 'Deep husky voice', 'Known for playing stoic reserved characters'],
+    ),
+    (
+        233, 'Quentin Tarantino',
+        'https://m.media-amazon.com/images/M/MV5BMTgyMjI3ODA3Nl5BMl5BanBnXkFtZTcwNzY2MDYxOQ@@._V1_UX67_CR0,0,67,98_AL_.jpg',
+        '1963-03-27',
+        ['Briefcases and suitcases play an important role in his films',
+         'Makes references to cult movies and television',
+         'Often uses an unconventional storytelling device in his films'],
+    ),
+]
+
+for row in actors:
+    session.execute(insert_actor, row)
+
+print(f"Inserted {len(actors)} actors.")
+```
+
+> **What you should see:** `Inserted 6 actors.`
+
+### Cell 6 — Insert wide-row data
+
+```python
+insert_movies_by_actor = session.prepare("""
+    INSERT INTO movies.movies_by_actor (actor_id, movie_id, title)
+    VALUES (?, ?, ?)
+""")
+
+insert_actors_by_movie = session.prepare("""
+    INSERT INTO movies.actors_by_movie (movie_id, title, actor_id, name)
+    VALUES (?, ?, ?, ?)
+""")
+
+movies_by_actor = [
+    (246, 110912, 'Pulp Fiction'),
+    (246, 1606378, 'A Good Day to Die Hard'),
+    (246, 217869, 'Unbreakable'),
+    (246, 377917, 'The Fifth Element'),
+    (246, 112864, 'Die Hard: With a Vengeance'),
+    (206, 133093, 'The Matrix'),
+    (206, 234215, 'The Matrix Reloaded'),
+    (206, 111257, 'Speed'),
+    (113, 111257, 'Speed'),
+]
+
+for row in movies_by_actor:
+    session.execute(insert_movies_by_actor, row)
+
+actors_by_movie = [
+    (133093, 'The Matrix',    206, 'Keanu Reeves'),
+    (133093, 'The Matrix',    401, 'Laurence Fishburne'),
+    (133093, 'The Matrix',   5251, 'Carrie-Anne Moss'),
+    (133093, 'The Matrix', 915989, 'Hugo Weaving'),
+    (110912, 'Pulp Fiction',  237, 'John Travolta'),
+    (110912, 'Pulp Fiction',  168, 'Samuel L. Jackson'),
+    (110912, 'Pulp Fiction',  246, 'Bruce Willis'),
+]
+
+for row in actors_by_movie:
+    session.execute(insert_actors_by_movie, row)
+
+print("Wide-row data inserted.")
+```
+
+> **What you should see:** `Wide-row data inserted.`
+
+### Cell 7 — Query data
+
+```python
+# All movies for Bruce Willis
+rows = session.execute("SELECT title FROM movies.movies_by_actor WHERE actor_id = 246")
+print("Bruce Willis filmography:")
+for row in rows:
+    print(f"  {row.title}")
+
+print()
+
+# All actors in Pulp Fiction
+rows = session.execute("SELECT name, title FROM movies.actors_by_movie WHERE movie_id = 110912")
+print("Pulp Fiction cast:")
+for row in rows:
+    print(f"  {row.name} — {row.title}")
+```
+
+```
+Bruce Willis filmography:
+  Pulp Fiction
+  Die Hard: With a Vengeance
+  The Fifth Element
+  Unbreakable
+  A Good Day to Die Hard
+
+Pulp Fiction cast:
+  Bruce Willis — Pulp Fiction
+  John Travolta — Pulp Fiction
+  Samuel L. Jackson — Pulp Fiction
+```
+
+> **What you should see:** Bruce Willis's filmography and the Pulp Fiction cast.
+>
+> **What just happened?** Both queries read from a single partition — all rows for a given `actor_id` or `movie_id` are co-located on the same node, making them extremely fast regardless of table size.
+
+### Cell 8 — Fetch a full movie by primary key
+
+```python
+row = session.execute(
+    "SELECT * FROM movies.movie WHERE movie_id = %s", (110912,)
+).one()
+
+print(f"Title:    {row.title}")
+print(f"Year:     {row.release_year}")
+print(f"Runtime:  {row.running_time} min")
+print(f"Genres:   {', '.join(sorted(row.genres))}")
+print(f"Rank:     {row.top250_rank}")
+```
+
+```
+Title:    Pulp Fiction
+Year:     1994
+Runtime:  154 min
+Genres:   Crime, Drama
+Rank:     8
+```
+
+> **What you should see:** The Pulp Fiction record with all stored fields printed.
+
+### Cell 9 — Counter columns (star ratings)
+
+Counter columns can only be incremented or decremented — they cannot be set with `INSERT`.
+
+```python
+update_counter = session.prepare("""
+    UPDATE movies.rating_by_movie
+    SET five_star = five_star + 1
+    WHERE movie_id = ?
+""")
+
+# Simulate 3 five-star votes for Pulp Fiction
+for _ in range(3):
+    session.execute(update_counter, (110912,))
+
+# One four-star and one two-star vote
+session.execute("UPDATE movies.rating_by_movie SET four_star = four_star + 1 WHERE movie_id = 110912")
+session.execute("UPDATE movies.rating_by_movie SET two_star  = two_star  + 1 WHERE movie_id = 110912")
+
+row = session.execute("SELECT * FROM movies.rating_by_movie WHERE movie_id = 110912").one()
+print("Pulp Fiction ratings:")
+print(f"  ★★★★★  {row.five_star}")
+print(f"  ★★★★   {row.four_star}")
+print(f"  ★★★    {row.three_star}")
+print(f"  ★★     {row.two_star}")
+print(f"  ★      {row.one_star}")
+```
+
+```
+Pulp Fiction ratings:
+  ★★★★★  3
+  ★★★★   1
+  ★★★    None
+  ★★     1
+  ★      None
+```
+
+> **What you should see:** The accumulated star counts for Pulp Fiction.
+>
+> **What just happened?** Counter columns use a CRDT-based merge strategy — increments from concurrent clients are automatically reconciled without conflicts, making them safe for distributed vote tallying.
+
+### Cell 10 — Counter columns (view counts per month)
+
+```python
+update_views = session.prepare("""
+    UPDATE movies.movie_viewed_by_time
+    SET male = male + ?, female = female + ?
+    WHERE movie_id = ? AND year = ? AND month = ?
+""")
+
+view_data = [
+    # (male_delta, female_delta, movie_id, year, month)
+    (2, 1, 110912, 2019, 3),
+    (1, 3, 110912, 2019, 4),
+    (2, 2, 110912, 2019, 5),
+    (3, 2, 133093, 2019, 3),
+    (2, 3, 133093, 2019, 4),
+    (1, 2, 133093, 2019, 5),
+]
+
+for male, female, movie_id, year, month in view_data:
+    session.execute(update_views, (male, female, movie_id, year, month))
+
+# View counts for Pulp Fiction across all months (newest first)
+rows = session.execute(
+    "SELECT year, month, male, female FROM movies.movie_viewed_by_time WHERE movie_id = 110912"
+)
+print("Pulp Fiction view counts (newest first):")
+print(f"  {'Year':>4}  {'Month':>5}  {'Male':>6}  {'Female':>7}")
+for row in rows:
+    print(f"  {row.year:>4}  {row.month:>5}  {row.male:>6}  {row.female:>7}")
+```
+
+```
+Pulp Fiction view counts (newest first):
+  Year  Month    Male   Female
+  2019      5       2        2
+  2019      4       1        3
+  2019      3       2        1
+```
+
+> **What you should see:** Monthly view counts for Pulp Fiction returned in descending year/month order, as defined by the `CLUSTERING ORDER BY (year DESC, month DESC)` clause on the table.
+
+### Cell 11 — Bulk insert with an unlogged batch
+
+For loading many rows that share the same partition key, Cassandra **unlogged batches** reduce round trips by sending all writes in a single coordinator request.
+
+```python
+from cassandra.query import BatchStatement, BatchType
+
+# Batch-insert all movies for Keanu Reeves in one request
+batch = BatchStatement(batch_type=BatchType.UNLOGGED)
+
+stmt = session.prepare("""
+    INSERT INTO movies.movies_by_actor (actor_id, movie_id, title) VALUES (?, ?, ?)
+""")
+
+keanu_movies = [
+    (206, 133093, 'The Matrix'),
+    (206, 234215, 'The Matrix Reloaded'),
+    (206, 111257, 'Speed'),
+]
+
+for row in keanu_movies:
+    batch.add(stmt, row)
+
+session.execute(batch)
+print("Keanu Reeves filmography batch-inserted.")
+
+rows = session.execute("SELECT title FROM movies.movies_by_actor WHERE actor_id = 206")
+for row in rows:
+    print(f"  {row.title}")
+```
+
+> **What you should see:** `Keanu Reeves filmography batch-inserted.` followed by the three movie titles.
+>
+> **What just happened?** An unlogged batch groups writes for the same partition into one coordinator request, reducing round trips. Unlike logged batches (which have atomicity overhead), unlogged batches are optimised purely for throughput.
+
+### Cell 12 — Cleaning up
+
+```python
+session.execute("DROP KEYSPACE IF EXISTS movies")
+cluster.shutdown()
+print("Keyspace dropped and connection closed.")
+```
+
+> **What you should see:** `Keyspace dropped and connection closed.` — all workshop tables have been removed and the driver connection is released.
