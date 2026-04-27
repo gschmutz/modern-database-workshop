@@ -18,6 +18,7 @@ We assume that the platform described [here](../01-environment) is running and a
 - [Text Search](#text-search)
 - [Aggregating Data](#aggregating-data)
 - [Removing Documents](#removing-documents)
+- [Using the Python API with MongoDB](#using-the-python-api-with-mongodb)
 
 ## What you will learn
 
@@ -28,6 +29,7 @@ We assume that the platform described [here](../01-environment) is running and a
 - How to optimize query performance using indexes
 - How to perform full-text search
 - How to aggregate data using the aggregation pipeline
+- How to interact with MongoDB using the Python API
 
 ## Prerequisites
 
@@ -39,7 +41,7 @@ We assume that the platform described [here](../01-environment) is running and a
 
 You can find the `mongo` command line utility inside the MongoDB docker container running as part of the platform. Connect via SSH onto the Docker Host and run the following `docker exec` command
 
-```
+```bash
 docker exec -ti mongo-1 mongosh -u "root" -p "abc123!"
 ```
 
@@ -49,34 +51,28 @@ You should see an output similar to this one below.
 
 ```bash
 bigdata@bigdata:~$ docker exec -ti mongo-1 mongosh -u "root" -p "abc123!"
-Current Mongosh Log ID:6446cf419d459282bba79eebConnecting to:mongodb://<credentials>@127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.8.0
-Using MongoDB:6.0.5
-Using Mongosh:1.8.0
+CCurrent Mongosh Log ID:	69efb17239762e8dd144ba88
+Connecting to:		mongodb://<credentials>@127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.8.2
+Using MongoDB:		8.2.7
+Using Mongosh:		2.8.2
 
-For mongosh info see: https://docs.mongodb.com/mongodb-shell/
-
-------
-   The server generated these startup warnings when booting 
-   2023-04-24T18:06:04.486+00:00: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
-   2023-04-24T18:06:08.233+00:00: vm.max_map_count is too low
-------
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+To help improve our products, anonymous usage data is collected and sent to MongoDB periodically (https://www.mongodb.com/legal/privacy-policy).
+You can opt-out by running the disableTelemetry() command.
 
 ------
-   Enable MongoDB's free cloud-based monitoring service, which will then receive and display
-   metrics about your deployment (disk utilization, CPU, operation statistics, etc). 
-   
-   The monitoring data will be available on a MongoDB website with a unique URL accessible to you
-   and anyone you share the URL with. MongoDB may use this information to make product 
-   improvements and to suggest MongoDB products and deployment options to you.      
-   
-   To enable free monitoring, run the following command: db.enableFreeMonitoring()   
-   To permanently disable this reminder, run the following command: db.disableFreeMonitoring()
+   The server generated these startup warnings when booting
+   2026-04-26T13:21:22.520+00:00: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+   2026-04-26T13:21:26.993+00:00: Soft rlimits for open file descriptors too low
+   2026-04-26T13:21:26.993+00:00: For customers running the current memory allocator, we suggest changing the contents of the following sysfsFile
+   2026-04-26T13:21:26.993+00:00: For customers running the current memory allocator, we suggest changing the contents of the following sysfsFile
+   2026-04-26T13:21:26.993+00:00: We suggest setting the contents of sysfsFile to 0.
 ------
 
 test> 
 ```
 
-> **What you should see:** The `test>` prompt confirming a successful connection, along with the MongoDB server version (e.g. `Using MongoDB: 6.0.5`) and the Mongosh shell version (e.g. `Using Mongosh: 1.8.0`).
+> **What you should see:** The `test>` prompt confirming a successful connection, along with the MongoDB server version (e.g. `Using MongoDB: 8.2.7`) and the Mongosh shell version (e.g. `Using Mongosh: 2.8.2`).
 
 You are now at the MongoDB command prompt, ready to execute any MongoDB statements. We can also see the version of the MongoDB server as well as of the MongoDB shell.
 
@@ -101,6 +97,30 @@ In a browser window, navigate to <http://dataplatform:28123/> and you should dir
 ![Alt Image Text](./images/mongo-express-home.png "Mongo Express")
 
 > **What you should see:** The Mongo Express home screen listing all databases in the MongoDB instance (e.g. `admin`, `config`, `local`), with a navigation bar for browsing collections and documents.
+
+#### DbGate
+
+The next one is the [DbGate](https://dbgate.io/) we already know from the other workshops.
+
+In a browser window navigate to <http://dataplatform:28120/> and login in as user `dbgate` and password `abc123!`.
+
+Click on the **Add new connection** (`+`) menu under **CONNECTIONS**. 
+
+Select `MongoDB` for the **Connection type** and enter the following values:
+
+ * **Server**: `mongo-1` 
+ * **Port**: `27017`
+ * **User**: `root`
+ * **Password**: `abc123!`
+ * **Display name**: `MongoDB`
+
+![Alt Image Text](./images/dbgate.png "DBGate")
+
+Click **Test** to check that connection settings are valid and then click **Connect**. 
+
+The **Cassandra** connection will show up below **CONNECTIONS**. 
+
+> **What you should see:** The DbGate web UI with the MongoDB connection listed under CONNECTIONS, and the keyspaces visible when the connection is expanded.
 
 #### Admin Mongo (not installed)
 
@@ -178,6 +198,7 @@ use filmdb
 ```
 
 > **What you should see:** `switched to db filmdb`
+
 > **What just happened?** MongoDB creates the database lazily — `filmdb` does not actually exist on disk yet and will not appear in `show dbs` until at least one document is inserted into one of its collections.
 
 It doesn’t matter that the database doesn’t really exist yet. The first collection that we create will also create the `filmdb` database. Now that you are inside a database, you can start issuing database commands, like `db.getCollectionNames()`. 
@@ -248,6 +269,7 @@ after executing the command, you should get back the following result, telling t
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId`.
+
 > **What just happened?** MongoDB assigned an auto-generated `_id` of type `ObjectId` to the document because none was provided. Documents are stored internally as BSON (Binary JSON), which supports richer types than plain JSON — such as `ObjectId`, `Date`, and `BinData`.
 
 In the graphical tools, most of the time you only have to provide the JSON document, without having to specify the `db.movies.insertOne()` command. 
@@ -296,6 +318,7 @@ db.movies.insertOne (
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "The Matrix".
+
 > **What just happened?** As before, MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `movies` collection.
 
 If we execute `db.getCollectionNames()` now, we should see the collection we have just added documents to
@@ -370,6 +393,7 @@ db.persons.insertOne (
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Bruce Willis".
+
 > **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
 
 then add the actor "Keanu Reeves"
@@ -393,6 +417,7 @@ db.persons.insertOne (
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Keanu Reeves".
+
 > **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
 
 followed by the actress "Sandra Bullock"
@@ -414,6 +439,7 @@ db.persons.insertOne (
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Sandra Bullock".
+
 > **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
 
 and finally we also add "Quentin Tarantino"
@@ -444,6 +470,7 @@ db.persons.insertOne (
 ```
 
 > **What you should see:** An acknowledgement object with `acknowledged: true` and an `insertedId` containing the newly generated `ObjectId` for "Quentin Tarantino".
+
 > **What just happened?** MongoDB assigned an auto-generated `ObjectId` and stored the document as BSON in the `persons` collection.
 
 So now let's also check that we have all 4 persons added to the collection
@@ -581,6 +608,7 @@ After executing the multi insert, we can check that we have in fact 50 movies in
 ```
 
 > **What you should see:** The number `50`, confirming that all documents (the 2 full-detail movies inserted earlier plus the 48 just added) are now in the `movies` collection.
+
 > **What just happened?** `insertMany` inserted all 48 documents in a single operation. MongoDB assigned an auto-generated `ObjectId` `_id` to each document and stored them as BSON. Because the new documents contain fewer fields than the earlier ones, this also demonstrates MongoDB's schema-less nature.
 
 Now that we have data, we can master selectors. `{field: value}` is used to find any documents where field is equal to value. `{field1: value1, field2: value2}` is how we can combine them with **and** semantic. 
@@ -671,6 +699,7 @@ db.movies.updateOne ( {title: 'Fight Club'} , { $set: {rating: 9} } )
 ```
 
 > **What you should see:** A result object with `matchedCount: 1` and `modifiedCount: 1`, confirming that the document was found and the `rating` field was updated.
+
 > **What just happened?** MongoDB's `$set` operator only changed the `rating` field — all other fields in the document were preserved exactly as they were. This is unlike a SQL UPDATE which replaces the specified columns but leaves the row structure fixed; with `$set` only the named fields are touched.
 
 In addition to `$set`, we can leverage other operators to do some nifty things. All update operators work on fields - so your entire document won’t be wiped out. For example, the `$inc` operator is used to increment a field by a certain positive or negative amount. 
@@ -697,6 +726,7 @@ db.movies.updateOne( {title: 'The Matrix'} , { $inc: {votes: 1} } )
 ```
 
 > **What you should see:** A result object with `matchedCount: 1` and `modifiedCount: 1`, confirming that the `votes` field was incremented.
+
 > **What just happened?** The `$inc` operator added `1` to the existing `votes` value atomically, leaving all other fields untouched.
 
 check the new result using the same find as above a 2nd time
@@ -716,6 +746,7 @@ db.movies.createIndex( {title: 1} );
 ```
 
 > **What you should see:** A confirmation string such as `title_1`, which is the name MongoDB assigned to the new index.
+
 > **What just happened?** MongoDB built a B-tree index on the `title` field in ascending order. Queries that filter or sort by `title` will now use this index instead of scanning every document in the collection.
 
 if we know execute a query on the tile, the index will be used
@@ -782,6 +813,7 @@ Adding the `explain` method at the end of the find statement will return the fol
 ```
 
 > **What you should see:** Execution plan details including `winningPlan` with a stage of `IXSCAN` (index scan) referencing `title_1`, confirming the index is being used.
+
 > **What just happened?** `explain()` shows the query execution plan chosen by MongoDB's query optimiser. An `IXSCAN` stage means the index was used, while a `COLLSCAN` would mean a full collection scan. The plan also shows how many documents were examined versus returned, helping you identify inefficient queries.
 
 We can see that the `winningPlan` uses the `title_1` index. 
@@ -793,6 +825,7 @@ db.movies.createIndex( {id: 1}, {unique: true} );
 ```
 
 > **What you should see:** A confirmation string such as `id_1`, which is the name MongoDB assigned to the new unique index.
+
 > **What just happened?** MongoDB built a B-tree index on the `id` field with a uniqueness constraint. Any future attempt to insert a document with a duplicate `id` value will be rejected with a duplicate key error.
 
 If we now try to add one of the movies a 2nd time we get an error:
@@ -839,6 +872,7 @@ db.movies.createIndex ( { title: "text", plotOutline: "text" } )
 ```
 
 > **What you should see:** A confirmation string such as `title_text_plotOutline_text`, which is the name MongoDB assigned to the new text index.
+
 > **What just happened?** MongoDB built an inverted text index that tokenises, stems, and indexes all string values in the `title` and `plotOutline` fields. This enables full-text search with relevance scoring using the `$text` operator.
 
 Now let's to a text search for the term "fight"
@@ -924,6 +958,7 @@ db.movies.aggregate( [{$group:{_id:'$rating', total: { $sum:1 }}}])
 ```
 
 > **What you should see:** The aggregated result documents — one document per distinct `rating` value, each with an `_id` (the rating) and a `total` (the count of movies with that rating).
+
 > **What just happened?** MongoDB's aggregation pipeline processed all documents through a single `$group` stage that grouped them by the `rating` field and summed up the count for each group, similar to a SQL `GROUP BY rating` with `COUNT(*)`.
 
 In the shell we have the aggregate helper which takes an array of pipeline operators. For a simple count grouped by something, we only need one such operator and it’s called `$group`. This is the exact analog of GROUP BY in SQL where we create a new document with `_id` field indicating what field we are grouping by (here it’s rating) and other fields usually getting assigned results of some aggregation, in this case we `$sum 1` for each document that matches a particular rating. You probably noticed that the `_id` field was assigned `$rating` and not only `rating` - the `$` before a field name indicates that the value of this field from incoming document will be substituted.
@@ -1053,6 +1088,7 @@ Execution should return the following result
 ```
 
 > **What you should see:** The aggregated result documents — one document per genre (for movies released after 2000), each showing the genre name, the number of movies, and the minimum, maximum, and average rating, sorted by the number of movies in descending order.
+
 > **What just happened?** MongoDB's aggregation pipeline processed documents through a series of stages: `$match` filtered to movies released after 2000, `$unwind` flattened each movie's `genres` array into separate documents, `$group` grouped by genre while computing count and rating statistics, and `$sort` ordered the results by movie count descending. Each stage transforms the stream of documents passed to the next stage.
 
 There is another powerful pipeline operator called `$project` (analogous to the projection we can specify to the find command) which allows you not just to include certain fields, but to create or calculate new fields based on values in existing fields. For example, you can use math operators to add together values of several fields before finding out the average, or you can use string operators to create a new field that’s a concatenation of some existing fields.
@@ -1088,3 +1124,4 @@ db.movies.deleteMany( { "plotOutline": { $exists: false} } )
 
 > **What you should see:** A result object with `deletedCount` equal to the number of documents that had no `plotOutline` field — the 48 minimal movie documents inserted with `insertMany`.
 
+## Using the Python API with MongoDB
