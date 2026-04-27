@@ -41,17 +41,17 @@ For connecting to Redis, we can either use the Redis Command Line Utility or the
 Open another terminal window and enter the following command to start Redis CLI in another docker container:
 
 ```
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-cli -h redis-1 -p 6379
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-cli -h redis-1 -p 6379
 ```
 
 The Redis CLI should start and the following command prompt should appear (whereas the IP-Address can differ). 
 
 ```
-redis 06:12:59.44 INFO  ==>
-redis 06:12:59.45 INFO  ==> Welcome to the Bitnami redis container
-redis 06:12:59.45 INFO  ==> Subscribe to project updates by watching https://github.com/bitnami/containers
-redis 06:12:59.45 INFO  ==> NOTICE: Starting August 28th, 2025, only a limited subset of images/charts will remain available for free. Backup will be available for some time at the 'Bitnami Legacy' repository. More info at https://github.com/bitnami/containers/issues/83267
-redis 06:12:59.45 INFO  ==>
+redis 07:26:13.65 INFO  ==>
+redis 07:26:13.65 INFO  ==> Welcome to the Bitnami redis container
+redis 07:26:13.66 INFO  ==> Subscribe to project updates by watching https://github.com/bitnami/containers
+redis 07:26:13.66 INFO  ==> NOTICE: Starting August 28th, 2025, only a limited subset of images/charts will remain available for free. Backup will be available for some time at the 'Bitnami Legacy' repository. More info at https://github.com/bitnami/containers/issues/83267
+redis 07:26:13.66 INFO  ==>
 
 redis-1:6379>
 ```
@@ -95,15 +95,15 @@ In a web browser window, navigate to <http://dataplatform:28119>. You should see
 
 ### Using Redis Insight
 
-In a web browser window, navigate to <http://dataplatform:28174>. You should see an image similar to the one shown below
+In a web browser window, navigate to <http://dataplatform:28174>. Confirm the **EULA and Privacy settings** pop-up window and click **Submit** and you should see an image similar to the one shown below
 
 ![Redis Commander](./images/redis-insight-1.png)
 
 > **What you should see:** The Redis Insight welcome screen with an option to add a new Redis database connection.
 
-Click on **+ Add Redis database** and `redis://default@redis-1:6379` into the **Connection URL** field. Click on **Test Connection** to check the connection. If successfull, click on **Add Database**.
+Click on **+ Add Redis database** and `redis://default@redis-1:6379` into the **Connection URL** field. Click on **Test Connection** to check the connection. If successfull, click on **Add database**.
 
-Click on the new connection `redis-1:6379` to connect to the redis instance.
+Click on the new connection **redis-1:6379** to connect to the redis instance.
 
 ### Using DbGate
 
@@ -111,9 +111,7 @@ Click on the new connection `redis-1:6379` to connect to the redis instance.
 
 In a browser window navigate to <http://dataplatform:28120/> and login in as user `dbgate` and password `abc123!`.
 
-Click on the **+ Add new connection** under **CONNECTIONS**. 
-
-Select `Redis` for the **Connection type** and enter the following values:
+On the **New Connection** page (click on the **+ Add new connection** under **CONNECTIONS** if it is not visible) select `Redis` for the **Connection type** and enter the following values:
 
  * **Server**: `redis-1` 
  * **Port**: `6379`
@@ -128,7 +126,7 @@ Click **Test** to check that connection settings are valid and then click **Conn
 
 ## String Data Structure
 
-Enter the commands described in the following sections at the prompt. This can be done either using the Redis CLI or using the Redis Commander. 
+Enter the commands described in the following sections at the prompt. This can be done either using the Redis CLI or using the Redis Commander (you can always use the GUIs to check the results during the workshop). 
 
 ```
 HELP @STRING
@@ -163,21 +161,27 @@ SET movie:0110912:year "1994"
 SET movie:0110912:rating "8.9"
 ```
 
+We can always also just check if a key exists (from now on we show also the CLI prompt `redis:6379>` to better distinguish from the result)
+
 ```
-EXISTS movie:0110912:title
+redis:6379> EXISTS movie:0110912:title
 (integer) 1
 ```
 
 > **What you should see:** `(integer) 1` — a return value of 1 means the key exists in Redis.
 
+`KEYS` searches all keys in the current Redis database that match a given glob-style pattern. The `*` wildcard matches any sequence of characters.
+
 ```
-KEYS movie:0110912:*
+redis:6379> KEYS movie:0110912:*
 1) "movie:0110912:title"
 2) "movie:0110912:year"
 3) "movie:0110912:rating"
 ```
 
 > **What you should see:** The three keys stored for movie `0110912`, matching the wildcard pattern.
+
+**One important caveat:** `KEYS` scans the entire keyspace in one blocking pass, so it should never be used in production against a large dataset — it will freeze Redis for every other client while it runs. The safe alternative is `SCAN`, which iterates incrementally. For workshop exploration with a small number of keys, `KEYS` is fine.
 
 ### Get and Set operations
 
@@ -239,13 +243,13 @@ Now let's model a movie **view counter** — a number that tracks how many times
 First we initialise the counter, then use `INCR` to increment it atomically:
 
 ```
-redis:6379> SET movie:0110912:views 0
-OK
 redis:6379> INCR movie:0110912:views
 (integer) 1
 ```
 
 > **What you should see:** `(integer) 1` — the incremented value returned immediately.
+
+> **What just happened?** Redis auto-initialises non-existing numeric keys to 0 before applying the operation, so INCR on a missing key always yields 1.
 >
 > **What just happened?** INCR is an atomic operation — Redis increments and returns the new value in a single step, preventing race conditions that would occur if you read, modify, and write separately.
 
@@ -279,11 +283,9 @@ redis:6379> INCR movie:0110912:views
 ```
 
 > **What you should see:** `(integer) 1`.
->
-> **What just happened?** Redis auto-initialises non-existing numeric keys to 0 before applying the operation, so INCR on a missing key always yields 1.
 
 ----
-**Note:** There is something special about INCR. Why do we provide such an operation if we can do it ourselves with a bit of code? After all it is as simple as:
+**Note:** There is something special about `INCR`. Why do we provide such an operation if we can do it ourselves with a bit of code? After all it is as simple as:
 
 ```
 x = GET movie:0110912:views
@@ -387,7 +389,7 @@ redis:6379> GET watchlist
 
 > **What you should see:** A `WRONGTYPE` error message.
 >
-> **What just happened?** Redis enforces type safety per key — a key created as a List cannot be read with String commands. Each data type has its own command set.
+> **What just happened?** Redis enforces type safety per key — a key created as a **List** cannot be read with **String** commands. Each data type has its own command set.
 
 We need to use `LRANGE` instead:
 
@@ -412,7 +414,7 @@ redis:6379> LRANGE watchlist 0 -1
 4) "Inception"
 ```
 
-`LRANGE` gives a subset of the list. It takes the index of the first element you want to retrieve as its first parameter and the index of the last element you want to retrieve as its second parameter. A value of -1 for the second parameter means to retrieve elements until the end of the list.
+`LRANGE` gives a subset of the list. It takes the index of the first element you want to retrieve as its first parameter and the index of the last element you want to retrieve as its second parameter. A value of `-1` for the second parameter means to retrieve elements until the end of the list.
 
 ```
 redis:6379> LRANGE watchlist 0 1
@@ -539,7 +541,7 @@ redis:6379> SUNION genre:action genre:sci-fi
 
 > **What you should see:** The combined unique elements from both sets (order may vary).
 >
-> **What just happened?** SUNION merges two sets and deduplicates — equivalent to a set union in mathematics. Any element present in either set appears exactly once in the result. The Matrix and Inception appear only once even though they are in both sets.
+> **What just happened?** `SUNION` merges two sets and deduplicates — equivalent to a set union in mathematics. Any element present in either set appears exactly once in the result. The Matrix and Inception appear only once even though they are in both sets.
 
 `SUNIONSTORE` combines two or more sets and stores the result into a new set:
 
@@ -559,7 +561,7 @@ redis:6379> SINTER genre:action genre:sci-fi
 
 > **What you should see:** Only the elements present in both sets — `"The Matrix"` and `"Inception"` (order may vary).
 >
-> **What just happened?** SINTER returns the intersection — only members that exist in every specified set. Movies unique to one genre are excluded.
+> **What just happened?** `SINTER` returns the intersection — only members that exist in every specified set. Movies unique to one genre are excluded.
 
 `SDIFF` returns movies in the first set but not in the second — movies tagged as Action but NOT Sci-Fi:
 
@@ -650,7 +652,7 @@ redis:6379> ZSCORE top:movies "Pulp Fiction"
 
 ```
 redis:6379> ZRANK top:movies "The Matrix"
-(integer) 0
+(integer) 2
 ```
 
 `ZREVRANK` — the rank of a movie, descending (0 = highest rated):
@@ -769,7 +771,7 @@ Redis ships with a built-in benchmarking tool called `redis-benchmark`. It simul
 Run the benchmark tool from a temporary Docker container on the same Docker network as Redis:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -q
 ```
 
 The key flags used here are:
@@ -784,26 +786,27 @@ The key flags used here are:
 You should see output similar to the following (exact numbers will vary depending on your hardware):
 
 ```
-PING_INLINE: 142653.36 requests per second, p50=0.175 msec
-PING_MBULK: 153139.53 requests per second, p50=0.167 msec
-SET: 137931.03 requests per second, p50=0.183 msec
-GET: 149253.73 requests per second, p50=0.175 msec
-INCR: 147058.83 requests per second, p50=0.175 msec
-LPUSH: 138696.25 requests per second, p50=0.183 msec
-RPUSH: 140845.08 requests per second, p50=0.183 msec
-LPOP: 147058.83 requests per second, p50=0.175 msec
-RPOP: 149700.60 requests per second, p50=0.175 msec
-SADD: 142450.14 requests per second, p50=0.175 msec
-HSET: 140449.44 requests per second, p50=0.183 msec
-SPOP: 147275.41 requests per second, p50=0.175 msec
-ZADD: 135685.22 requests per second, p50=0.191 msec
-ZPOPMIN: 145772.59 requests per second, p50=0.175 msec
-LRANGE_100: 56818.18 requests per second, p50=0.343 msec
-LRANGE_300: 24813.90 requests per second, p50=0.663 msec
-LRANGE_500: 16155.09 requests per second, p50=1.015 msec
-LRANGE_600: 13550.14 requests per second, p50=1.183 msec
-MSET (10 keys): 115473.44 requests per second, p50=0.223 msec
-XADD: 139860.14 requests per second, p50=0.183 msec
+PING_INLINE: 60132.29 requests per second, p50=0.439 msec
+PING_MBULK: 62227.75 requests per second, p50=0.399 msec
+SET: 65445.03 requests per second, p50=0.391 msec
+GET: 50454.09 requests per second, p50=0.495 msec
+INCR: 64683.05 requests per second, p50=0.391 msec
+LPUSH: 60679.61 requests per second, p50=0.423 msec
+RPUSH: 54644.81 requests per second, p50=0.455 msec
+LPOP: 57803.47 requests per second, p50=0.543 msec
+RPOP: 60386.47 requests per second, p50=0.415 msec
+SADD: 60386.47 requests per second, p50=0.399 msec
+HSET: 57736.72 requests per second, p50=0.463 msec
+SPOP: 60096.15 requests per second, p50=0.407 msec
+ZADD: 59808.61 requests per second, p50=0.407 msec
+ZPOPMIN: 59772.86 requests per second, p50=0.415 msec
+LPUSH (needed to benchmark LRANGE): 54704.60 requests per second, p50=0.527 msec
+LRANGE_100 (first 100 elements): 38138.82 requests per second, p50=0.631 msec
+LRANGE_300 (first 300 elements): 17307.03 requests per second, p50=1.335 msec
+LRANGE_500 (first 500 elements): 10895.62 requests per second, p50=2.119 msec
+LRANGE_600 (first 600 elements): 9694.62 requests per second, p50=2.359 msec
+MSET (10 keys): 47415.84 requests per second, p50=0.663 msec
+XADD: 56338.03 requests per second, p50=0.479 msec
 ```
 
 > **What you should see:** One line per command showing the throughput in requests per second and the p50 (median) latency. Higher requests/second means better throughput; lower latency is better.
@@ -813,54 +816,84 @@ XADD: 139860.14 requests per second, p50=0.183 msec
 Remove the `-q` flag to get detailed per-percentile latency histograms for each command:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000
 ```
 
 You will see output like this for each command:
 
 ```
 ====== SET ======
-  100000 requests completed in 0.72 seconds
+  100000 requests completed in 1.84 seconds
   50 parallel clients
   3 bytes payload
   keep alive: 1
-  host configuration "save": 3600 1 300 100 60 10000
-  host configuration "appendonly": no
+  host configuration "save":
+  host configuration "appendonly": yes
   multi-thread: no
 
 Latency by percentile distribution:
-0.000% <= 0.071 milliseconds (cumulative count 1)
-50.000% <= 0.183 milliseconds (cumulative count 50753)
-75.000% <= 0.199 milliseconds (cumulative count 75536)
-87.500% <= 0.215 milliseconds (cumulative count 87952)
-93.750% <= 0.239 milliseconds (cumulative count 93795)
-96.875% <= 0.279 milliseconds (cumulative count 96900)
-98.438% <= 0.335 milliseconds (cumulative count 98440)
-99.219% <= 0.415 milliseconds (cumulative count 99226)
-99.609% <= 0.487 milliseconds (cumulative count 99615)
-99.805% <= 0.559 milliseconds (cumulative count 99805)
-99.902% <= 0.623 milliseconds (cumulative count 99902)
-99.951% <= 0.671 milliseconds (cumulative count 99952)
-99.976% <= 0.711 milliseconds (cumulative count 99977)
-99.988% <= 0.743 milliseconds (cumulative count 99989)
-99.994% <= 0.767 milliseconds (cumulative count 99994)
-99.997% <= 0.791 milliseconds (cumulative count 99997)
-99.998% <= 0.807 milliseconds (cumulative count 99999)
-99.999% <= 0.815 milliseconds (cumulative count 100000)
-100.000% <= 0.815 milliseconds (cumulative count 100000)
+0.000% <= 0.127 milliseconds (cumulative count 1)
+50.000% <= 0.447 milliseconds (cumulative count 50276)
+75.000% <= 0.543 milliseconds (cumulative count 76721)
+87.500% <= 0.615 milliseconds (cumulative count 87647)
+93.750% <= 0.879 milliseconds (cumulative count 93757)
+96.875% <= 1.303 milliseconds (cumulative count 96885)
+98.438% <= 1.679 milliseconds (cumulative count 98440)
+99.219% <= 2.583 milliseconds (cumulative count 99220)
+99.609% <= 3.919 milliseconds (cumulative count 99611)
+99.805% <= 6.055 milliseconds (cumulative count 99805)
+99.902% <= 10.063 milliseconds (cumulative count 99903)
+99.951% <= 12.943 milliseconds (cumulative count 99952)
+99.976% <= 17.567 milliseconds (cumulative count 99976)
+99.988% <= 17.951 milliseconds (cumulative count 99988)
+99.994% <= 18.095 milliseconds (cumulative count 99994)
+99.997% <= 18.175 milliseconds (cumulative count 99997)
+99.998% <= 18.255 milliseconds (cumulative count 99999)
+99.999% <= 18.319 milliseconds (cumulative count 100000)
+100.000% <= 18.319 milliseconds (cumulative count 100000)
 
 Cumulative distribution of latencies:
-2.500% <= 0.103 milliseconds (cumulative count 2500)
-95.000% <= 0.255 milliseconds (cumulative count 95000)
-99.000% <= 0.383 milliseconds (cumulative count 99000)
-99.900% <= 0.607 milliseconds (cumulative count 99900)
-100.000% <= 0.815 milliseconds (cumulative count 100000)
+0.000% <= 0.103 milliseconds (cumulative count 0)
+0.027% <= 0.207 milliseconds (cumulative count 27)
+0.759% <= 0.303 milliseconds (cumulative count 759)
+36.998% <= 0.407 milliseconds (cumulative count 36998)
+65.700% <= 0.503 milliseconds (cumulative count 65700)
+87.143% <= 0.607 milliseconds (cumulative count 87143)
+90.552% <= 0.703 milliseconds (cumulative count 90552)
+92.638% <= 0.807 milliseconds (cumulative count 92638)
+94.056% <= 0.903 milliseconds (cumulative count 94056)
+95.068% <= 1.007 milliseconds (cumulative count 95068)
+95.782% <= 1.103 milliseconds (cumulative count 95782)
+96.397% <= 1.207 milliseconds (cumulative count 96397)
+96.885% <= 1.303 milliseconds (cumulative count 96885)
+97.372% <= 1.407 milliseconds (cumulative count 97372)
+97.806% <= 1.503 milliseconds (cumulative count 97806)
+98.239% <= 1.607 milliseconds (cumulative count 98239)
+98.488% <= 1.703 milliseconds (cumulative count 98488)
+98.672% <= 1.807 milliseconds (cumulative count 98672)
+98.802% <= 1.903 milliseconds (cumulative count 98802)
+98.901% <= 2.007 milliseconds (cumulative count 98901)
+98.999% <= 2.103 milliseconds (cumulative count 98999)
+99.351% <= 3.103 milliseconds (cumulative count 99351)
+99.659% <= 4.103 milliseconds (cumulative count 99659)
+99.721% <= 5.103 milliseconds (cumulative count 99721)
+99.812% <= 6.103 milliseconds (cumulative count 99812)
+99.898% <= 7.103 milliseconds (cumulative count 99898)
+99.900% <= 8.103 milliseconds (cumulative count 99900)
+99.906% <= 10.103 milliseconds (cumulative count 99906)
+99.948% <= 11.103 milliseconds (cumulative count 99948)
+99.950% <= 12.103 milliseconds (cumulative count 99950)
+99.956% <= 13.103 milliseconds (cumulative count 99956)
+99.959% <= 14.103 milliseconds (cumulative count 99959)
+99.960% <= 17.103 milliseconds (cumulative count 99960)
+99.994% <= 18.111 milliseconds (cumulative count 99994)
+100.000% <= 19.103 milliseconds (cumulative count 100000)
 
 Summary:
-  throughput summary: 137931.03 requests per second
+  throughput summary: 54436.58 requests per second
   latency summary (msec):
-          avg       min       p50       p95       p99      p99.9
-        0.191     0.064     0.183     0.255     0.383     0.599
+          avg       min       p50       p95       p99       max
+        0.543     0.120     0.447     1.007     2.111    18.319
 ```
 
 ### Benchmarking specific commands
@@ -868,13 +901,13 @@ Summary:
 Use the `-t` flag to benchmark only specific commands (comma-separated):
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -t set,get,incr -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -t set,get,incr -q
 ```
 
 ```
-SET: 140845.08 requests per second, p50=0.183 msec
-GET: 149700.60 requests per second, p50=0.175 msec
-INCR: 146198.83 requests per second, p50=0.175 msec
+SET: 61012.81 requests per second, p50=0.407 msec
+GET: 61349.70 requests per second, p50=0.399 msec
+INCR: 58072.01 requests per second, p50=0.447 msec
 ```
 
 > **What you should see:** Throughput numbers only for the three specified commands.
@@ -884,49 +917,49 @@ INCR: 146198.83 requests per second, p50=0.175 msec
 The `-c` flag controls the number of parallel client connections (default is 50). Increasing it can reveal throughput gains from parallelism or expose contention:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -c 10 -t set,get -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -c 10 -t set,get -q
 ```
 
 ```
-SET: 120000.00 requests per second, p50=0.255 msec
-GET: 122000.00 requests per second, p50=0.247 msec
+SET: 61462.82 requests per second, p50=0.095 msec
+GET: 52219.32 requests per second, p50=0.111 msec
 ```
 
-Now increase to 200 connections:
+Now increase to 20 connections:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -c 200 -t set,get -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -c 20 -t set,get -q
 ```
 
 ```
-SET: 158000.00 requests per second, p50=0.655 msec
-GET: 162000.00 requests per second, p50=0.639 msec
+SET: 58105.75 requests per second, p50=0.191 msec
+GET: 65146.58 requests per second, p50=0.159 msec
 ```
 
-> **What you should see:** Higher throughput at 200 connections compared to 10, but also higher latency. This demonstrates the throughput vs. latency trade-off under concurrency.
+> **What you should see:** Higher throughput at 20 connections compared to 10, but also higher latency. This demonstrates the throughput vs. latency trade-off under concurrency.
 
 ### Effect of payload size
 
 The `-d` flag controls the size of the value in bytes used for SET/GET tests (default is 3 bytes). Larger payloads take more time to serialise and transmit:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -d 64 -t set,get -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -d 64 -t set,get -q
 ```
 
 ```
-SET: 138000.00 requests per second, p50=0.191 msec
-GET: 148000.00 requests per second, p50=0.183 msec
+SET: 59594.76 requests per second, p50=0.415 msec
+GET: 59844.41 requests per second, p50=0.423 msec
 ```
 
 Try a larger payload of 1024 bytes (1 KB):
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -d 1024 -t set,get -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -d 1024 -t set,get -q
 ```
 
 ```
-SET: 126000.00 requests per second, p50=0.207 msec
-GET: 134000.00 requests per second, p50=0.199 msec
+SET: 48638.13 requests per second, p50=0.551 msec
+GET: 52410.90 requests per second, p50=0.439 msec
 ```
 
 > **What you should see:** A small but measurable drop in throughput as payload size increases, because Redis must read and write more bytes per operation.
@@ -936,12 +969,12 @@ GET: 134000.00 requests per second, p50=0.199 msec
 Pipelining batches multiple commands into a single network round trip. The `-P` flag sets the number of commands per pipeline batch (default is 1, i.e. no pipelining):
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -P 16 -t set,get -q
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -P 8 -t set,get -q
 ```
 
 ```
-SET: 952380.94 requests per second, p50=0.263 msec
-GET: 999000.00 requests per second, p50=0.255 msec
+SET: 293255.12 requests per second, p50=0.959 msec
+GET: 420168.06 requests per second, p50=0.471 msec
 ```
 
 > **What you should see:** A dramatic increase in throughput — often 5–10x or more — because each network round trip now carries 16 commands instead of 1.
@@ -953,13 +986,14 @@ GET: 999000.00 requests per second, p50=0.255 msec
 Use `--csv` to produce machine-readable output suitable for loading into a spreadsheet or monitoring tool:
 
 ```bash
-docker run -it --rm --network nosql-platform bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -t set,get,incr -q --csv
+docker run -it --rm --network modern-database-platform-1 bitnamilegacy/redis:8.2 redis-benchmark -h redis-1 -p 6379 -n 100000 -t set,get,incr -q --csv
 ```
 
 ```
-"SET","140845.07"
-"GET","149700.60"
-"INCR","146198.83"
+"test","rps","avg_latency_ms","min_latency_ms","p50_latency_ms","p95_latency_ms","p99_latency_ms","max_latency_ms"
+"SET","51652.89","0.562","0.152","0.463","0.895","2.671","16.607"
+"GET","49603.17","0.583","0.112","0.479","0.775","2.055","60.095"
+"INCR","54794.52","0.581","0.160","0.495","0.967","1.743","21.407"
 ```
 
 > **What you should see:** One CSV line per tested command with the command name and its throughput in requests per second.
@@ -995,7 +1029,7 @@ import sys
 import redis
 
 r = redis.Redis(host='redis-1', port=6379, db=0, decode_responses=True)
-r.auth('abc123!')
+#r.auth('abc123!')
 r.ping()
 ```
 
