@@ -1043,7 +1043,7 @@ MCP Inspector is a browser-based tool for browsing the tools and resources an MC
    http://63.178.5.123:28404/sse
    ```
    
-   replace the IP address by the one from the server where the dataplatform is running-
+   replace the IP address by the one from the server where the dataplatform is running.
 4. Change **Connection Type** to `Direct`    
 5. Click **Connect** and you should see a **Connected** message, if connectivity is successful.
 
