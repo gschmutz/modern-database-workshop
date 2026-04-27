@@ -1344,15 +1344,21 @@ MCP Inspector is a browser-based tool for browsing the tools an MCP server expos
 2. In the **Transport** dropdown, select **SSE**.
 3. In the **URL** field, enter:
    ```
-   http://dataplatform:28225/sse
+   http://63.178.5.123:28225/sse
    ```
-4. Click **Connect**.
-
-> **What you should see:** The Inspector connects and lists the MCP server's capabilities — tools covering all major Redis data structures: strings, lists, sets, sorted sets, hashes, streams, and more.
+   
+   replace the IP address by the one from the server where the dataplatform is running.
+4. Change **Connection Type** to `Direct`
+5. Click **Connect** and you should see a **Connected** message, if connectivity is successful.
 
 ### Browsing tools
 
-Once connected, click the **Tools** tab. You will see the full list of tools the Redis MCP server exposes. Click any tool name to expand its input schema and description.
+Once connected
+
+1. Navigate to **Tools** in the Menu bar.
+2. Click on **List Tools** to display the available tools.
+
+Click any tool name to expand its input schema and description.
 
 Key tools available (grouped by data type):
 
@@ -1369,44 +1375,61 @@ Key tools available (grouped by data type):
 
 1. Click the **Tools** tab and select **hset**.
 2. In the **Arguments** panel, enter:
-   ```json
-   {
-     "key": "movie:0110912",
-     "field": "title",
-     "value": "Pulp Fiction"
-   }
-   ```
+
+   * **name**: `movie:0110912`
+   * **key**: `title`,
+   * **value**: `Pulp Fiction`
+
 3. Click **Run Tool**.
 
-> **What you should see:** A JSON response confirming the field was set (`1`).
+> **What you should see:** A JSON response confirming the field was set.
 
 Now read the full movie hash back:
 
 1. Select the **hgetall** tool.
-2. Enter:
-   ```json
-   { "key": "movie:0110912" }
-   ```
+2. In the **Arguments** panel, enter:
+    **name**: `movie:0110912`
+
 3. Click **Run Tool**.
 
 > **What you should see:** The hash fields for `movie:0110912` returned as a JSON object.
 
 ### Exploring stored keys
 
-To see what movie keys are currently in Redis, select the **keys** tool and enter:
+To see what movie keys are currently in Redis, select the **scan_keys** tool and enter:
 
-```json
-{ "pattern": "movie:*" }
-```
+   * **pattern**: `movie:0110912`
+
+Click **Run Tool**.
 
 > **What you should see:** A list of all movie keys currently stored in the Redis instance.
 
 ### Connecting an AI assistant to the MCP server
 
-Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with an MCP extension) can connect to the Redis MCP server. Configure the client with:
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with a MCP extension) can connect to the PostgreSQL MCP server. 
 
-- **Transport**: SSE
-- **URL**: `http://dataplatform:28225/sse`
+To connect from **Claude Desktop** to the PostgreSQL MCP server 
+
+1. Navigate to **Settings**
+2. Click on **Developer** in the menu on the left side
+3. Click on **Edit Config** and open the `claude_desktop_config.json` in an Editor and add the following config
+
+```
+{
+  "mcpServers": {
+    "redis-mcp-server": {
+        "type": "stdio",
+        "command": "/Users/mortensi/.local/bin/uvx",
+        "args": [
+            "--from", "redis-mcp-server@latest",
+            "redis-mcp-server",
+            "--url", "redis://63.178.5.123:6379/0"
+        ]
+    }
+  }
+}
+```
+4. Save the file and restart **Claude Desktop**. 
 
 Once connected, the assistant can answer questions and perform actions like:
 
