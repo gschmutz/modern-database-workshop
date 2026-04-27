@@ -1566,7 +1566,8 @@ for movie in doc["actedInMovies"]:
     print(f"  {movie['title']}")
 ```
 
-````Inserted 3 persons.
+```
+Inserted 3 persons.
 
 Bruce Willis filmography:
   Pulp Fiction
