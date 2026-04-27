@@ -1315,6 +1315,20 @@ for doc in cursor:
     print(f"  {doc['title']}  {doc['genres']}")
 ```
 
+```
+Action movies from 2010 onward:
+  Avengers: Endgame (2019)  ★8.8
+  Inception (2010)  ★8.7
+
+Movies with a plot outline: 2
+
+Family or Animation movies:
+  It's a Wonderful Life  ['Drama', 'Family', 'Fantasy']
+  Spirited Away  ['Animation', 'Adventure', 'Family', 'Fantasy', 'Mystery']
+  Modern Times  ['Comedy', 'Drama', 'Family', 'Romance']
+  The Lion King  ['Animation', 'Adventure', 'Drama', 'Family', 'Musical']
+```
+
 > **What you should see:** Action movies from 2010 onward, the count of movies with a plot outline, and all Family or Animation movies.
 
 ### Cell 6 — Projection (select specific fields)
@@ -1370,6 +1384,12 @@ db.movies.update_one(
 )
 doc = db.movies.find_one({"title": "The Matrix"}, {"genres": 1, "_id": 0})
 print(f"The Matrix genres after push: {doc['genres']}")
+```
+
+```
+Fight Club updated: matched=1, modified=1
+The Matrix votes after increment: 1496539
+The Matrix genres after push: ['Action', 'Sci-Fi', 'Cyberpunk']
 ```
 
 > **What you should see:** Confirmation lines for each update, then the incremented vote count and updated genres array for The Matrix.
@@ -1472,11 +1492,11 @@ Genre            Count    Min    Max     Avg
 Drama               11    8.5    9.0    8.64
 Adventure            7    8.5    8.9    8.70
 Fantasy              5    8.5    8.9    8.74
-Sci-Fi               4    8.5    8.8    8.63
 Thriller             4    8.5    9.0    8.68
+Sci-Fi               4    8.5    8.8    8.62
 Crime                3    8.5    9.0    8.70
 Action               3    8.7    9.0    8.83
-Biography            2    8.5    8.5    8.50
+Music                2    8.5    8.5    8.50
 ```
 
 > **What you should see:** The top 8 genres for post-2000 movies, with rating statistics and sorted by movie count.
@@ -1544,6 +1564,14 @@ doc = db.persons.find_one({"name": "Bruce Willis"})
 print(f"\n{doc['name']} filmography:")
 for movie in doc["actedInMovies"]:
     print(f"  {movie['title']}")
+```
+
+````Inserted 3 persons.
+
+Bruce Willis filmography:
+  Pulp Fiction
+  A Good Day to Die Hard
+  Unbreakable
 ```
 
 > **What you should see:** The count of inserted persons followed by Bruce Willis's filmography from the embedded `actedInMovies` array.
