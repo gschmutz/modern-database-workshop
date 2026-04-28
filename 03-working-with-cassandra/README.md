@@ -225,14 +225,14 @@ Run the following statement for creating a table called user. For those who are 
 ```sql
 DROP TABLE IF EXISTS movies.movie;
 CREATE TABLE movies.movie (movie_id int,
-	title text,				// title
-	release_year int,		// year
-	running_time int, 		// runtimes
-	languages set<text>, 	// language codes
-	genres set<text>,      	// genres
-	plot_outline text,    	// plot outline
-   cover_url text, 			// cover url
-   top250_rank int,			// top 250 rank
+    title text,                // title
+    release_year int,        // year
+    running_time int,         // runtimes
+    languages set<text>,     // language codes
+    genres set<text>,          // genres
+    plot_outline text,        // plot outline
+   cover_url text,             // cover url
+   top250_rank int,            // top 250 rank
    PRIMARY KEY (movie_id)
 );
 ```
@@ -246,11 +246,11 @@ This creates a first static column family (table) in Cassandra. Now do the same 
 ```sql
 DROP TABLE IF EXISTS movies.actor;
 CREATE TABLE movies.actor (actor_id int,
-  name text,					// name
-  headshot_url text,		// headshot
-  mini_biography text,		// mini biography
-  birth_date text,			// birth date
-  trade_mark list<text>,	// trade mark
+  name text,                    // name
+  headshot_url text,        // headshot
+  mini_biography text,        // mini biography
+  birth_date text,            // birth date
+  trade_mark list<text>,    // trade mark
   PRIMARY KEY (actor_id)
 );
 ```
@@ -276,8 +276,8 @@ INSERT INTO movies.movie (movie_id, title, release_year, running_time, languages
                    genres, plot_outline, cover_url, top250_rank)
 VALUES (0133093,
         'The Matrix',
- 		1999,
- 		136,
+         1999,
+         136,
       {'en'},
       {'Action', 'Sci-Fi'},
       $$Thomas A. Anderson is a man living two lives. By day he is an average computer programmer and by night a hacker known as Neo. Neo has always questioned his reality, but the truth is far beyond his imagination. Neo finds himself targeted by the police when he is contacted by Morpheus, a legendary computer hacker branded a terrorist by the government. Morpheus awakens Neo to the real world, a ravaged wasteland where most of humanity have been captured by a race of machines that live off of the humans' body heat and electrochemical energy and who imprison their minds within an artificial reality known as the Matrix. As a rebel against the machines, Neo must return to the Matrix and confront the agents: super-powerful computer programs devoted to snuffing out Neo and the entire human rebellion$$,
@@ -301,14 +301,14 @@ VALUES (0110912,
 INSERT INTO movies.movie (movie_id, title, release_year, running_time, languages,
                    genres, plot_outline, cover_url, top250_rank)
 VALUES (0111257,
-		 'Speed',
-		 1994,
-		 116,
-		 {'en'},
-		 {'Action', 'Adventure', 'Crime', 'Thriller'},
-		 $$Bomber extortionist's elevator plan backfires, so he rigs a bomb to a LA city bus. The stipulation is: once armed, the bus must stay above 50 mph to keep from exploding. Also if LAPD Officer tries to unload any passengers off, Payne will detonate it. Joe Morton co-stars as Jack's superior, and Jeff Daniels supports Jack helping him try to defuse the bomb.$$,
-		 'https://m.media-amazon.com/images/M/MV5BYjc0MjYyN2EtZGRhMy00NzJiLWI2Y2QtYzhiYTU3NzAxNzg4XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SY150_CR0,0,101,150_.jpg',
-		  null); 		
+         'Speed',
+         1994,
+         116,
+         {'en'},
+         {'Action', 'Adventure', 'Crime', 'Thriller'},
+         $$Bomber extortionist's elevator plan backfires, so he rigs a bomb to a LA city bus. The stipulation is: once armed, the bus must stay above 50 mph to keep from exploding. Also if LAPD Officer tries to unload any passengers off, Payne will detonate it. Joe Morton co-stars as Jack's superior, and Jeff Daniels supports Jack helping him try to defuse the bomb.$$,
+         'https://m.media-amazon.com/images/M/MV5BYjc0MjYyN2EtZGRhMy00NzJiLWI2Y2QtYzhiYTU3NzAxNzg4XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SY150_CR0,0,101,150_.jpg',
+          null);         
 ```
 
 > **What you should see:** No output on success — Cassandra INSERT does not return a confirmation message by default.
@@ -323,35 +323,35 @@ Let's add the actor "Bruce Willis", "John Travolta", "Sandra Bullock", "Samuel L
 // insert "Bruce Willis" - 0000246
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000246,
- 		'Bruce Willis',
- 		'https://m.media-amazon.com/images/M/MV5BMjA0MjMzMTE5OF5BMl5BanBnXkFtZTcwMzQ2ODE3Mw@@._V1_UY98_CR8,0,67,98_AL_.jpg',
- 		'1955-03-19',
-		 ['Frequently plays a man who suffered a tragedy, had lost something or had a  crisis of confidence or conscience.',
-		  'Frequently plays likeable wisecracking heroes with a moral centre',
-		  'Headlines action-adventures, often playing a policeman, hitman or someone in the military',
-		  'Often plays men who get caught up in situations far beyond their control',
-		  'Sardonic one-liners',
-		  'Shaven head',
-		  'Distinctive, gravelly voice',
-		  'Smirky grin.',
-		  'Known for playing cynical anti-heroes with unhappy personal lives']);
+         'Bruce Willis',
+         'https://m.media-amazon.com/images/M/MV5BMjA0MjMzMTE5OF5BMl5BanBnXkFtZTcwMzQ2ODE3Mw@@._V1_UY98_CR8,0,67,98_AL_.jpg',
+         '1955-03-19',
+         ['Frequently plays a man who suffered a tragedy, had lost something or had a  crisis of confidence or conscience.',
+          'Frequently plays likeable wisecracking heroes with a moral centre',
+          'Headlines action-adventures, often playing a policeman, hitman or someone in the military',
+          'Often plays men who get caught up in situations far beyond their control',
+          'Sardonic one-liners',
+          'Shaven head',
+          'Distinctive, gravelly voice',
+          'Smirky grin.',
+          'Known for playing cynical anti-heroes with unhappy personal lives']);
 
 // insert "John Travolta" - 0000237
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000237,
-		 'John Travolta',
-		 'https://m.media-amazon.com/images/M/MV5BMTUwNjQ0ODkxN15BMl5BanBnXkFtZTcwMDc5NjQwNw@@._V1_UY98_CR3,0,67,98_AL_.jpg',
-		 '1954-02-18',
-		 ['Cleft chin and razor-sharp cheekbones',
-		  'Often works some sort of dance into his roles',
-		  'New Jersey accent',
-		  'Black hair and blue eyes']);
+         'John Travolta',
+         'https://m.media-amazon.com/images/M/MV5BMTUwNjQ0ODkxN15BMl5BanBnXkFtZTcwMDc5NjQwNw@@._V1_UY98_CR3,0,67,98_AL_.jpg',
+         '1954-02-18',
+         ['Cleft chin and razor-sharp cheekbones',
+          'Often works some sort of dance into his roles',
+          'New Jersey accent',
+          'Black hair and blue eyes']);
 
 
 // insert "Sandra Bullock" - 0000113
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000113,
-		'Sandra Bullock',
+        'Sandra Bullock',
         'https://m.media-amazon.com/images/M/MV5BMTI5NDY5NjU3NF5BMl5BanBnXkFtZTcwMzQ0MTMyMw@@._V1_UX67_CR0,0,67,98_AL_.jpg',
         '1964-07-26',
         null);
@@ -359,39 +359,39 @@ VALUES (0000113,
 // insert "Samuel L. Jackson" - 0000168
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000168,
-		 'Samuel L. Jackson',
-		 'https://m.media-amazon.com/images/M/MV5BMTQ1NTQwMTYxNl5BMl5BanBnXkFtZTYwMjA1MzY1._V1_UX67_CR0,0,67,98_AL_.jpg',
-		 '1948-12-21',
-		 ['Deep authoritative voice',
-		  'Rebellious characters who are disliked or considered strange by others in the story',
-		  'Often plays police officers or government officials. Both prone to intimidation or violence',
-		  'Often plays very wise and intelligent characters with great capacities for violence',
-		  'Frequently plays tough characters who swear a lot',
-		  'Frequent swearing',
-		  'Often sports a moustache or goatee in his films',
-		  'Shaven head',
-		  'Kangol hats',
-		  'Often plays hotheaded characters with a fiery temper',
-		  'Often shouts the word "motherf*****" at some point in a film',
-		  'Frequently cast by Quentin Tarantino']);
+         'Samuel L. Jackson',
+         'https://m.media-amazon.com/images/M/MV5BMTQ1NTQwMTYxNl5BMl5BanBnXkFtZTYwMjA1MzY1._V1_UX67_CR0,0,67,98_AL_.jpg',
+         '1948-12-21',
+         ['Deep authoritative voice',
+          'Rebellious characters who are disliked or considered strange by others in the story',
+          'Often plays police officers or government officials. Both prone to intimidation or violence',
+          'Often plays very wise and intelligent characters with great capacities for violence',
+          'Frequently plays tough characters who swear a lot',
+          'Frequent swearing',
+          'Often sports a moustache or goatee in his films',
+          'Shaven head',
+          'Kangol hats',
+          'Often plays hotheaded characters with a fiery temper',
+          'Often shouts the word "motherf*****" at some point in a film',
+          'Frequently cast by Quentin Tarantino']);
 
 // insert "Uma Thurman" - 0000235
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000235,
-		 'Uma Thurman',
-		 'https://m.media-amazon.com/images/M/MV5BMjMxNzk1MTQyMl5BMl5BanBnXkFtZTgwMDIzMDEyMTE@._V1_UX67_CR0,0,67,98_AL_.jpg',
-		 '1970-04-29',
-		 ['Long blond hair and blue eyes', 'Statuesque, model-like figure']);
+         'Uma Thurman',
+         'https://m.media-amazon.com/images/M/MV5BMjMxNzk1MTQyMl5BMl5BanBnXkFtZTgwMDIzMDEyMTE@._V1_UX67_CR0,0,67,98_AL_.jpg',
+         '1970-04-29',
+         ['Long blond hair and blue eyes', 'Statuesque, model-like figure']);
 
 // insert "Keanu Reeves" - 0000206
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
 VALUES (0000206,
-		 'Keanu Reeves',
- 		 'https://m.media-amazon.com/images/M/MV5BNjUxNDcwMTg4Ml5BMl5BanBnXkFtZTcwMjU4NDYyOA@@._V1_UY98_CR4,0,67,98_AL_.jpg',
- 		 '1964-09-02',
-		 ['Intense contemplative gaze',
-		  'Deep husky voice',
-		  'Known for playing stoic reserved characters']);
+         'Keanu Reeves',
+          'https://m.media-amazon.com/images/M/MV5BNjUxNDcwMTg4Ml5BMl5BanBnXkFtZTcwMjU4NDYyOA@@._V1_UY98_CR4,0,67,98_AL_.jpg',
+          '1964-09-02',
+         ['Intense contemplative gaze',
+          'Deep husky voice',
+          'Known for playing stoic reserved characters']);
 
 // insert "Quentin Tarantino" - 0000233
 INSERT INTO movies.actor (actor_id, name, headshot_url, birth_date, trade_mark)
@@ -405,7 +405,7 @@ VALUES (0000233,
           'Frequently works with Harvey Keitel, Tim Roth, Michael Madsen, Uma Thurman, Michael Bowen, Samuel L. Jackson, Michael Parks and Christoph Waltz.',
           'His films usually have a shot from inside an automobile trunk',
           'He always has a Dutch element in his films: The opening tune, Little Green Bag, in Reservoir Dogs (1992) was performed by George Baker Selection and written by Jan Gerbrand Visser and Benjamino Bouwens who are all Dutch. The character Freddy Newandyke, played by Tim Roth is a direct translation to a typical Dutch last name, Nieuwendijk. The code name of Tim Roth is Mr. Orange, the royal color of Holland and the last name of the royal family. The Amsterdam conversation in Pulp Fiction (1994), Vincent Vega smokes from a Dutch tobacco shag (Drum), the mentioning of Rutger Hauer in Jackie Brown (1997), the brides name is Beatrix, the name of the Royal Dutch Queen.',
-		  '[The Mexican Standoff] All his movies (including True Romance (1993), which he only wrote and did not direct) feature a scene in which three or more characters are pointing guns at each other at the same time.',
+          '[The Mexican Standoff] All his movies (including True Romance (1993), which he only wrote and did not direct) feature a scene in which three or more characters are pointing guns at each other at the same time.',
          'Often uses an unconventional storytelling device in his films, such as retrospect (Reservoir Dogs (1992)), non-linear (Pulp Fiction (1994)), or "chapter" format (Kill Bill: Vol. 1 (2003)).',
          'His films will often include one long, unbroken take where a character is  followed around somewhere.']);
 ```
@@ -534,9 +534,9 @@ Of course we can also delete data.
 
 Data can be deleted using CQL in one of the following ways
 
-1.	As used before - it deletes column(s) or entire row(s)
-2.	`TRUNCATE`: It deletes all rows from the table
-3.	`USING TTL`: It sets time to live on column(s) within a row; after expiration of specified period, columns are automatically deleted by Cassandra.
+1.    As used before - it deletes column(s) or entire row(s)
+2.    `TRUNCATE`: It deletes all rows from the table
+3.    `USING TTL`: It sets time to live on column(s) within a row; after expiration of specified period, columns are automatically deleted by Cassandra.
 
 
 Let's remove the actor with ID 99999999 we have just inserted before with a `DELETE`:
@@ -590,9 +590,9 @@ Let's start with the Actor and the movies he has played in, which we call `movie
 ```
 DROP TABLE IF EXISTS movies.movies_by_actor;
 CREATE TABLE movies.movies_by_actor (actor_id int,
-				movie_id int,  
-				title text,
-				PRIMARY KEY (actor_id, movie_id)
+                movie_id int,  
+                title text,
+                PRIMARY KEY (actor_id, movie_id)
 );
 ```
 
@@ -608,9 +608,9 @@ Now let's continue with the table to get the actors who have played in a given m
 DROP TABLE IF EXISTS movies.actors_by_movie;
 CREATE TABLE movies.actors_by_movie (movie_id int,
              title text STATIC,
-				actor_id int,  
-				name text,
-				PRIMARY KEY (movie_id, actor_id)
+                actor_id int,  
+                name text,
+                PRIMARY KEY (movie_id, actor_id)
 );
 ```
 
@@ -726,7 +726,7 @@ CREATE TABLE movies.rating_by_movie (movie_id int,
              three_star counter,  
              four_star counter,  
              five_star counter,
-				PRIMARY KEY (movie_id)
+                PRIMARY KEY (movie_id)
 );
 ```
 
@@ -774,11 +774,11 @@ In this case we create a wide-row table, with `movie_id` for the partition key a
 ```sql
 DROP TABLE IF EXISTS movies.movie_viewed_by_time;
 CREATE TABLE movies.movie_viewed_by_time (movie_id int,
-			   year int,
-			   month int,
+               year int,
+               month int,
              male counter,
              female counter,
-				PRIMARY KEY (movie_id, year, month)
+                PRIMARY KEY (movie_id, year, month)
 ) WITH CLUSTERING ORDER BY (year DESC, month DESC);
 ```
 
