@@ -609,7 +609,7 @@ redis:6379> ZADD top:movies 8.7 "Forrest Gump"
 redis:6379> ZREVRANGE top:movies 0 2
 1) "The Shawshank Redemption"
 2) "The Godfather"
-3) "The Dark Knight"
+3) "The Godfather: Part II"
 ```
 
 > **What you should see:** The three highest-rated movies. When two movies share the same score, Redis orders them lexicographically by member name, which is why The Godfather comes after The Shawshank Redemption (both rated 9.2) and The Dark Knight appears before The Godfather: Part II (both rated 9.0).
