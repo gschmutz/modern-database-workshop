@@ -42,7 +42,7 @@ We assume that the platform described [here](../01-environment) is running and a
 You can find the `mongo` command line utility inside the MongoDB docker container running as part of the platform. Connect via SSH onto the Docker Host and run the following `docker exec` command
 
 ```bash
-docker exec -ti mongo-1 mongosh -u "root" -p "abc123!"
+docker exec -ti mongo-1 mongosh -u 'root' -p 'abc123!'
 ```
 
 This will connect you into the `mongo` container and run the `mongo` shell inside it. 
@@ -50,7 +50,7 @@ This will connect you into the `mongo` container and run the `mongo` shell insid
 You should see an output similar to this one below. 
 
 ```bash
-bigdata@bigdata:~$ docker exec -ti mongo-1 mongosh -u "root" -p "abc123!"
+bigdata@bigdata:~$ docker exec -ti mongo-1 mongosh -u 'root' -p 'abc123!'
 CCurrent Mongosh Log ID:	69efb17239762e8dd144ba88
 Connecting to:		mongodb://<credentials>@127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.8.2
 Using MongoDB:		8.2.7
