@@ -16,6 +16,7 @@ We assume that the platform described [here](../01-environment/README.md) is run
 - [Indexes and Constraints](#indexes-and-constraints)
 - [Viewing the Database](#viewing-the-database)
 - [Querying the Graph](#querying-the-graph)
+- [Working with Neo4J from Python](#working-with-neo4j-from-python)
 
 ## What you will learn
 
@@ -1478,8 +1479,163 @@ DETACH DELETE p
 
 > **What just happened?** `DETACH DELETE` first removes all relationships attached to the node, then deletes the node itself. It is the safe default for deleting any node. Plain `DELETE` is a safeguard — it prevents accidental deletion of a node that is still connected to others.
 
-Delete all nodes and relationships to reset the database:
+---
 
-```cypher
-MATCH (n) DETACH DELETE n
+## Working with Neo4J from Python
+
+The official Neo4J Python driver (`neo4j`) lets you run Cypher queries directly from Python code. In this section we will connect from the **Jupyter** environment and demonstrate the most important operations using the movie graph we built above.
+
+Open a browser and navigate to <http://dataplatform:28888> and log in with token `abc123!`.
+
+Create a new Python 3 notebook by clicking on the **Python 3 (ipykernel)** widget, then work through the cells below in order.
+
+### Cell 1 — Install the driver
+
+```python
+import sys
+!{sys.executable} -m pip install neo4j
+```
+
+> **What you should see:** pip output ending with `Successfully installed neo4j-...`.
+
+### Cell 2 — Connect to Neo4J
+
+```python
+from neo4j import GraphDatabase
+
+URI  = "bolt://neo4j-1:7687"
+AUTH = ("neo4j", "abc123abc123")
+
+driver = GraphDatabase.driver(URI, auth=AUTH)
+driver.verify_connectivity()
+print("Connected to Neo4J")
+```
+
+> **What you should see:** `Connected to Neo4J` — the driver verified it can reach the database over the Bolt protocol.
+
+`verify_connectivity()` raises an exception immediately if the host is unreachable or the credentials are wrong, so problems surface here rather than during the first query.
+
+### Cell 3 — Run a read query
+
+`execute_query` is the simplest way to run a query and get results back as a list of records. Parameters are passed as keyword arguments and referenced in Cypher with `$name` syntax, which prevents injection issues.
+
+```python
+records, summary, keys = driver.execute_query(
+    """
+    MATCH (p:Person {name: $name})-[:ACTED_IN]->(m:Movie)
+    RETURN m.title AS title, m.released AS released
+    ORDER BY m.released
+    """,
+    name="Tom Hanks",
+    database_="neo4j"
+)
+
+for record in records:
+    print(record["title"], record["released"])
+```
+
+```
+A League of Their Own 1992
+Sleepless in Seattle 1993
+Apollo 13 1995
+You've Got Mail 1998
+The Green Mile 1999
+Cast Away 2000
+The Da Vinci Code 2006
+Cloud Atlas 2012
+```
+
+> **What you should see:** the eight movies Tom Hanks acted in, in release-year order.
+
+### Cell 4 — Parameterized write query
+
+Use `execute_query` for writes as well. `MERGE` ensures that running the cell more than once does not create duplicate nodes or relationships:
+
+```python
+driver.execute_query(
+    """
+    MERGE (p:Person {name: $name})
+    ON CREATE SET p.born = $born
+    MERGE (m:Movie  {title: $title})
+    MERGE (p)-[:REVIEWED {rating: $rating, summary: $summary}]->(m)
+    """,
+    name="Guido Schmutz",
+    born=1968,
+    title="Pulp Fiction",
+    rating=99,
+    summary="An absolute masterpiece.",
+    database_="neo4j"
+)
+print("Review added")
+```
+
+> **What you should see:** `Review added` with no errors.
+
+> **What just happened?** Each `$parameter` in the Cypher string is substituted safely by the driver — the values are never concatenated into the query string. This is the graph equivalent of a prepared statement in SQL.
+
+Verify the new review was written:
+
+```python
+records, _, _ = driver.execute_query(
+    """
+    MATCH (p:Person {name: $name})-[r:REVIEWED]->(m:Movie)
+    RETURN m.title AS movie, r.rating AS rating, r.summary AS summary
+    """,
+    name="Guido Schmutz",
+    database_="neo4j"
+)
+
+for record in records:
+    print(record["movie"], record["rating"], record["summary"])
+# Pulp Fiction 99 An absolute masterpiece.
+```
+
+### Cell 5 — Traversal query: co-actors
+
+This query traverses two hops — from a person to their movies, then back out to everyone else in those movies:
+
+```python
+records, _, _ = driver.execute_query(
+    """
+    MATCH (p:Person {name: $name})-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(coActor:Person)
+    RETURN DISTINCT coActor.name AS coActor, COLLECT(m.title) AS sharedMovies
+    ORDER BY coActor
+    """,
+    name="Tom Hanks",
+    database_="neo4j"
+)
+
+for record in records:
+    print(f"{record['coActor']:25s}  {record['sharedMovies']}")
+```
+
+```
+Audrey Tautou              ['The Da Vinci Code']
+Bill Paxton                ['Apollo 13']
+Bill Pullman               ['Sleepless in Seattle']
+Ed Harris                  ['Apollo 13']
+Gary Sinise                ['Apollo 13']
+Geena Davis                ['A League of Their Own']
+Greg Kinnear               ["You've Got Mail"]
+Halle Berry                ['Cloud Atlas']
+Helen Hunt                 ['Cast Away']
+Hugo Weaving               ['Cloud Atlas']
+Ian McKellen               ['The Da Vinci Code']
+Jim Broadbent              ['Cloud Atlas']
+Kevin Bacon                ['Apollo 13']
+Lori Petty                 ['A League of Their Own']
+Meg Ryan                   ['Sleepless in Seattle', "You've Got Mail"]
+Parker Posey               ["You've Got Mail"]
+Paul Bettany               ['The Da Vinci Code']
+```
+
+> **What you should see:** Tom Hanks' co-actors with the list of films they share. `COLLECT` returns a Python list in the driver result.
+
+### Cell 6 — Close the driver
+
+Always close the driver when you are finished to release the underlying connection pool:
+
+```python
+driver.close()
+print("Driver closed")
 ```
