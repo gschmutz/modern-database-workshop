@@ -1369,8 +1369,7 @@ ORDER BY sharedActors DESC
  Cloud Atlas             | 1
  The Devil's Advocate    | 1
  V for Vendetta          | 1
- As Good as It Gets      | 0
-(6 rows)
+(5 rows)
 ```
 
 > **What just happened?** The query counts how many actors from *The Matrix* also appear in each other movie. The two sequels share the most actors, so they rank highest — exactly the kind of signal a recommendation engine would use.
