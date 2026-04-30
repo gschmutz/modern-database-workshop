@@ -17,6 +17,7 @@ We assume that the platform described [here](../01-environment/README.md) is run
 - [Viewing the Database](#viewing-the-database)
 - [Querying the Graph](#querying-the-graph)
 - [Working with Neo4J from Python](#working-with-neo4j-from-python)
+- [Using MCP with Neo4J](#using-mcp-with-neo4j)
 
 ## What you will learn
 
@@ -1639,3 +1640,72 @@ Always close the driver when you are finished to release the underlying connecti
 driver.close()
 print("Driver closed")
 ```
+
+---
+
+## Using MCP with Neo4J
+
+**Model Context Protocol (MCP)** is an open standard that lets AI assistants connect to external tools and data sources through a common interface. Instead of writing Cypher queries manually, you can give an AI assistant access to your Neo4J graph via an MCP server and interact with it in natural language.
+
+The data platform includes two components for this:
+
+| Component | URL | Purpose |
+|-----------|-----|---------|
+| **Neo4J MCP Server** | `http://dataplatform:28271/mcp` | Exposes the Neo4J graph as MCP tools (Streamable HTTP transport) |
+| **MCP Inspector** | <http://dataplatform:6274> | Web UI for exploring and testing any MCP server |
+
+The Neo4J MCP server uses the `mcp/neo4j` image, connected to `bolt://neo4j-1:7687` on the `neo4j` database with `NEO4J_READ_ONLY: false`, meaning it supports both read and write operations.
+
+### Connecting an AI assistant to the MCP server
+
+Any MCP-compatible AI client (Claude Desktop, Cursor, VS Code with an MCP extension) can connect to the Neo4J MCP server.
+
+To connect from **Claude Desktop**:
+
+1. Navigate to **Settings**.
+2. Click on **Developer** in the menu on the left side.
+3. Click on **Edit Config**, open `claude_desktop_config.json` in an editor, and add the following:
+
+```json
+{
+  "mcpServers": {
+    "neo4j": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "http://63.178.5.123:28271/mcp",
+        "--allow-http",
+        "--debug",
+        "--header",
+        "Authorization: Basic bmVvNGo6YWJjMTIzYWJjMTIz"
+      ]
+    }
+  }
+}
+```
+
+Replace the IP address with the one of the server where the data platform is running.
+
+4. Save the file and restart **Claude Desktop**.
+
+Once connected, the assistant can answer questions like:
+
+- *"Which actors have appeared in the most movies in the graph?"*
+- *"Find the shortest path between Kevin Bacon and Meg Ryan."*
+- *"Which movies did Tom Hanks and Meg Ryan both appear in?"*
+- *"Add a review for Pulp Fiction with a rating of 95."*
+- *"What relationship types does the graph contain?"*
+
+The assistant translates these into Cypher queries that run against your Neo4J database and returns the results in plain language.
+
+> **What just happened?** The MCP server acts as a bridge between the AI assistant and Neo4J. The assistant sees three typed tools — schema inspection, read queries, and write queries — rather than a raw Bolt connection. This means the assistant knows exactly what operations are available, can compose valid Cypher from a natural-language question, and the `NEO4J_READ_ONLY` flag gives you a single switch to make the connection read-only if needed.
+
+We can also use MCP to add new data to the graph
+
+- *"get information about the movie "Die Hard 1" and add it to the graph"*
+- *"also get it for Die Hard 2 and Die Hard 3"*
+- *"Retrieve all movies from the graph, determine the genre, add the genre as a Genre node and connect the movie to it"*
+
+After the last request the graph should also include **Genre** nodes
+
+![Alt Image Text](./images/neo4j-after-mcp-add.png "Neo4J Browser")
