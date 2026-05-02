@@ -19,6 +19,7 @@ For this workshop we will be using an IoT device/sensor simulator available via 
 - [Using Telegraf to retrieve values from MQTT and store in InfluxDB](#using-telegraf-to-retrieve-values-from-mqtt-and-store-in-influxdb)
 - [Querying Data with the InfluxDB 3.x CLI](#querying-data-with-the-influxdb-3x-cli)
 - [Querying Data with the InfluxDB Explorer UI](#querying-data-with-the-influxdb-explorer-ui)
+- [Working with InfluxDB from Python](#working-with-influxdb-from-python)
 
 ## What you will learn
 
@@ -775,4 +776,155 @@ After running a query that returns numeric columns over time, switch from the **
 ![](./images/influxdb-explorer-7.png)
 
 > **What you should see:** a line chart with one line per `room_type`, showing temperature or the selected metric over time
+
+---
+
+## Working with InfluxDB from Python
+
+The `influxdb3-python` library is the official Python client for InfluxDB 3.x. It uses the Apache Arrow Flight SQL protocol under the hood for fast columnar query results and returns data as a **pandas DataFrame**, making it easy to combine time-series queries with data analysis in a notebook.
+
+Open a browser and navigate to <http://dataplatform:28888> and log in with token `abc123!`.
+
+Create a new Python 3 notebook by clicking on the **Python 3 (ipykernel)** widget, then work through the cells below in order.
+
+### Cell 1 — Install the library
+
+```python
+import sys
+!{sys.executable} -m pip install influxdb3-python pandas
+```
+
+> **What you should see:** pip output ending with `Successfully installed influxdb3-python-...`.
+
+### Cell 2 — Connect to InfluxDB
+
+Replace the token value with the operator token you created in the [Configure Telegraf with a access token](#configure-telegraf-with-a-access-token) section.
+
+```python
+from influxdb_client_3 import InfluxDBClient3, Point
+
+TOKEN    = "apiv3_FBiA8QmpreTRyfkSwjfnI07NfmbNyEXvbc7tlsTtW2NQMQFm1Fi9MC-Clp7VlYapEeNF030nH8PIlzwyz0O60Q"
+HOST     = "http://influxdb3:8181"
+DATABASE = "demo-db"
+
+client = InfluxDBClient3(host=HOST, token=TOKEN, database=DATABASE)
+print("Connected to InfluxDB 3.x")
+```
+
+> **What you should see:** `Connected to InfluxDB 3.x` — the client is initialised. The actual connection to the server is lazy; it is established on the first write or query.
+
+### Cell 3 — Write data points
+
+The `Point` builder constructs a single time-series data point in Line Protocol format. Tags are indexed string columns (good for filtering); fields are the measured values.
+
+```python
+from datetime import datetime, timezone
+
+# Write a few simulated living-room readings
+points = [
+    Point("smart_home")
+        .tag("id",        "python-home-001")
+        .tag("owner",     "Python User")
+        .tag("room_type", "living room")
+        .field("temperature", 21.5)
+        .field("humidity",    44.0)
+        .time(datetime.now(timezone.utc)),
+    Point("smart_home")
+        .tag("id",        "python-home-001")
+        .tag("owner",     "Python User")
+        .tag("room_type", "kitchen")
+        .field("temperature", 19.0)
+        .field("humidity",    38.5)
+        .time(datetime.now(timezone.utc)),
+]
+
+client.write(record=points)
+print(f"Wrote {len(points)} points")
+```
+
+```
+Wrote 2 points
+```
+
+> **What you should see:** `Wrote 2 points` with no errors.
+
+> **What just happened?** Each `Point` maps to one row in the `smart_home` table. Tags become indexed columns (used in `WHERE` clauses), fields become regular columns (used in aggregations), and `.time()` sets the `time` column. Without `.time()`, InfluxDB uses the server's current time.
+
+### Cell 4 — Query with SQL
+
+`query` executes standard SQL against the database and returns an Apache Arrow `Table`. Call `.to_pandas()` to get a familiar DataFrame:
+
+```python
+df = client.query("""
+    SELECT time, id, owner, room_type, temperature, humidity
+    FROM smart_home
+    WHERE id = 'python-home-001'
+    ORDER BY time DESC
+    LIMIT 10
+""").to_pandas()
+
+print(df.to_string(index=False))
+```
+
+```
+                      time              id        owner     room_type  temperature  humidity
+ 2026-04-30 09:14:22+00:00  python-home-001  Python User       kitchen         19.0      38.5
+ 2026-04-30 09:14:22+00:00  python-home-001  Python User  living room         21.5      44.0
+```
+
+> **What you should see:** the two rows you just wrote, most-recent first.
+
+### Cell 5 — Aggregate query
+
+Use SQL aggregation to compute average temperature and humidity per room type across the entire dataset:
+
+```python
+df = client.query("""
+    SELECT   room_type,
+             ROUND(AVG(temperature), 2) AS avg_temp,
+             ROUND(AVG(humidity), 2)    AS avg_humidity,
+             COUNT(*)                   AS readings
+    FROM     smart_home
+    GROUP BY room_type
+    ORDER BY room_type
+""").to_pandas()
+
+print(df.to_string(index=False))
+```
+
+```
+   room_type  avg_temp  avg_humidity  readings
+    bathroom     22.01         40.04     18432
+     bedroom     22.00         39.98     18450
+     kitchen     22.01         39.99     18448
+ living room     21.99         39.99     18441
+```
+
+> **What you should see:** one row per room type with average temperature, average humidity, and the total number of readings collected since Telegraf started writing.
+
+### Cell 6 — Time-range query
+
+Filter to the last 5 minutes using an `interval` expression — the same syntax supported by the CLI:
+
+```python
+df = client.query("""
+    SELECT   time, room_type, temperature, humidity
+    FROM     smart_home
+    WHERE    time >= now() - interval '5 minutes'
+    ORDER BY time DESC
+    LIMIT    20
+""").to_pandas()
+
+print(f"{len(df)} rows in the last 5 minutes")
+print(df[["time", "room_type", "temperature", "humidity"]].head(5).to_string(index=False))
+```
+
+> **What you should see:** rows timestamped within the last 5 minutes. The count reflects how many MQTT messages arrived in that window.
+
+### Cell 7 — Close the client
+
+```python
+client.close()
+print("Client closed")
+```
 
