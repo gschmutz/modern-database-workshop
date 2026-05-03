@@ -92,6 +92,16 @@ curl -X PUT http://dataplatform:6333/collections/databases \
 ```
 > **What you should see:** `"result": true` confirming the collection was created.
 
+> **Distance metric options:** Qdrant supports four distance metrics for the `"distance"` field:
+>
+> | Value | Metric | Best for |
+> |-------|--------|----------|
+> | `"Cosine"` | Cosine similarity | Text and sentence embeddings — measures the angle between vectors, so magnitude differences are ignored |
+> | `"Dot"` | Dot product | Normalized embeddings (unit vectors) where direction and magnitude both matter; fastest option when vectors are pre-normalized |
+> | `"Manhattan"` | Manhattan (L1) distance | Sparse or high-dimensional data where L1 distance is more robust than L2 |
+>
+> The choice is made once at collection creation and cannot be changed later. For most NLP and semantic search use cases, `"Cosine"` is the right default.
+
 Alternatively you can also use the built-in **Qdrant Console** available here <http://dataplatform:6333/dashboard#/console> but you need to reformat the commands.
 
 ![Qdrant Dashboard](./images/qdrant-console.png)
