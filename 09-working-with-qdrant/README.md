@@ -42,14 +42,6 @@ Traditional databases store and retrieve data by exact match or range conditions
 
 A vector embedding is produced by a machine-learning model that encodes the *semantic meaning* of text, images, audio, or any other content into a fixed-length array of floating-point numbers. Two items that are semantically similar will have embeddings that are close together in that high-dimensional space.
 
-The most common similarity metrics are:
-
-| Metric | When to use |
-|--------|-------------|
-| **Cosine** | Comparing direction, not magnitude — ideal for text embeddings |
-| **Dot product** | When embeddings are normalized; fastest inner-product search |
-| **Euclidean** | When absolute distance matters (e.g. image feature spaces) |
-
 In Qdrant, the unit of storage is a **point**, which consists of:
 
 - **id** — a unique identifier (integer or UUID)
