@@ -120,6 +120,8 @@ You can also see the collections from the WebUI by clicking on **Collections**
 
 ### Inspect the collection
 
+> **Note — `jq`:** The commands from here on pipe output through `jq`, a lightweight command-line JSON processor that pretty-prints and colorizes JSON responses. If it is not already installed on your system, see the [official installation guide](https://jqlang.org/download/) for your platform. On most systems it is available via your package manager (e.g. `brew install jq`, `apt install jq`, `choco install jq`). If you prefer not to install it, simply remove `| jq` from any command — the raw JSON will still be returned, just without formatting.
+
 ```bash
 curl http://dataplatform:6333/collections/databases | jq
 ```
@@ -321,18 +323,42 @@ curl http://dataplatform:6333/collections/databases/points/1 | jq
 ```bash
 curl -X POST http://dataplatform:6333/collections/databases/points \
   -H 'Content-Type: application/json' \
-  -d '{"ids": [1, 3, 5], "with_vectors":true}'
+  -d '{"ids": [1, 3, 5], "with_vectors":true}' | jq
 ```
 
 ```json
 {
   "result": [
-    {"id": 1, "payload": {"name": "Redis",     "type": "key-value",  "year": 2009}, "vector": null},
-    {"id": 3, "payload": {"name": "Cassandra", "type": "wide-column","year": 2008}, "vector": null},
-    {"id": 5, "payload": {"name": "Neo4j",     "type": "graph",      "year": 2007}, "vector": null}
+    {
+      "id": 1,
+      "vector": [
+        0.7593934,
+        0.27121192,
+        0.5036793,
+        0.3099565
+      ]
+    },
+    {
+      "id": 3,
+      "vector": [
+        0.59895784,
+        0.32552055,
+        0.6380203,
+        0.3580726
+      ]
+    },
+    {
+      "id": 5,
+      "vector": [
+        0.3918588,
+        0.676847,
+        0.32061172,
+        0.5343529
+      ]
+    }
   ],
   "status": "ok",
-  "time": 0.002
+  "time": 0.00494961
 }
 ```
 
@@ -630,22 +656,37 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
   "result": [
     {
       "id": 2,
-      "score": 0.9923,
-      "payload": {"name": "MongoDB",       "type": "document", "year": 2009}
+      "version": 5,
+      "score": 0.9975369,
+      "payload": {
+        "name": "MongoDB",
+        "type": "document",
+        "year": 2009
+      }
     },
     {
       "id": 4,
-      "score": 0.9901,
-      "payload": {"name": "Elasticsearch", "type": "document", "year": 2010}
+      "version": 5,
+      "score": 0.9947418,
+      "payload": {
+        "name": "Elasticsearch",
+        "type": "document",
+        "year": 2010
+      }
     },
     {
       "id": 5,
-      "score": 0.9789,
-      "payload": {"name": "Neo4j",         "type": "graph",    "year": 2007}
+      "version": 5,
+      "score": 0.9776876,
+      "payload": {
+        "name": "Neo4j",
+        "type": "graph",
+        "year": 2007
+      }
     }
   ],
   "status": "ok",
-  "time": 0.002
+  "time": 0.004572438
 }
 ```
 
