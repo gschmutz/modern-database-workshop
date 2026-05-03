@@ -149,7 +149,7 @@ Useful built-in commands:
 Because CockroachDB speaks the PostgreSQL wire protocol, the standard `psql` client also works:
 
 ```bash
-docker exec -it cockroachdb cockroach sql --insecure --url "postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable"
+docker exec -it cockroachdb-1 cockroach sql --insecure --url "postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable"
 ```
 
 Or from outside the container (if you have `psql` installed locally):
@@ -178,7 +178,7 @@ The Admin UI provides:
 
 In a browser navigate to <http://dataplatform:28120> and log in with user `dbgate` and password `abc123!`.
 
-Click **+ Add new connection**, select `PostgreSQL` as the connection type (CockroachDB is wire-compatible), and enter:
+Click **+ Add new connection**, select `CockroachDB` as the connection type (alternatively you could also use PostgreSQL as CockroachDB is wire-compatible), and enter:
 
 - **Server**: `cockroachdb`
 - **Port**: `26257`
@@ -204,6 +204,8 @@ docker exec -it cockroachdb cockroach sql --insecure
 CREATE DATABASE filmdb;
 USE filmdb;
 ```
+
+and you should see 
 
 ```
 SET
@@ -258,7 +260,7 @@ CREATE TABLE person_trademark (
 
 -- Junction: movie ↔ genre
 CREATE TABLE movie_genre (
-    movie_id UUID NOT NULL REFERENCES movie(movie_id)  ON DELETE CASCADE,
+    movie_id VARCHAR(10) NOT NULL REFERENCES movie(movie_id)  ON DELETE CASCADE,
     genre_id UUID NOT NULL REFERENCES genre(genre_id)  ON DELETE CASCADE,
     PRIMARY KEY (movie_id, genre_id)
 );
@@ -286,7 +288,7 @@ SHOW TABLES;
 ```
 
 ```
-  schema_name | table_name       | type  | owner | estimated_row_count | locality
+  schema_name |    table_name    | type  | owner | estimated_row_count | locality
 --------------+------------------+-------+-------+---------------------+-----------
   public      | genre            | table | root  |                   0 | NULL
   public      | language         | table | root  |                   0 | NULL
@@ -296,6 +298,7 @@ SHOW TABLES;
   public      | movie_person     | table | root  |                   0 | NULL
   public      | person           | table | root  |                   0 | NULL
   public      | person_trademark | table | root  |                   0 | NULL
+(8 rows)
 ```
 
 > **What you should see:** All 8 tables with `estimated_row_count: 0`. Notice the `locality` column — in a multi-region cluster this would show which region each table's data is pinned to.
@@ -401,17 +404,224 @@ INSERT INTO movie (movie_id, title, year, rating, rank) VALUES
 ('0078788', 'Apocalypse Now',                                        1979, 8.4, 50);
 ```
 
-### Persons, trademarks, genres, languages, and cast
+### Persons
 
-These INSERT statements are identical to the PostgreSQL workshop. Copy the following blocks from [Working with PostgreSQL](../01-working-with-postgresql/README.md):
+```sql
+INSERT INTO person (person_id, name, headshot, birth_date) VALUES
+('0000246', 'Bruce Willis',
+ 'https://m.media-amazon.com/images/M/MV5BMjA0MjMzMTE5OF5BMl5BanBnXkFtZTcwMzQ2ODE3Mw@@._V1_UY98_CR8,0,67,98_AL_.jpg',
+ '1955-03-19'),
+('0000206', 'Keanu Reeves',    NULL, NULL),
+('0000113', 'Sandra Bullock',
+ 'https://m.media-amazon.com/images/M/MV5BMTI5NDY5NjU3NF5BMl5BanBnXkFtZTcwMzQ0MTMyMw@@._V1_UX67_CR0,0,67,98_AL_.jpg',
+ '1964-07-26'),
+('0000233', 'Quentin Tarantino',
+ 'https://m.media-amazon.com/images/M/MV5BMTgyMjI3ODA3Nl5BMl5BanBnXkFtZTcwNzY2MDYxOQ@@._V1_UX67_CR0,0,67,98_AL_.jpg',
+ '1963-03-27'),
+('0000619', 'Tim Roth',            NULL, NULL),
+('0001625', 'Amanda Plummer',      NULL, NULL),
+('0522503', 'Laura Lovelace',      NULL, NULL),
+('0000237', 'John Travolta',       NULL, NULL),
+('0000168', 'Samuel L. Jackson',   NULL, NULL),
+('0482851', 'Phil LaMarr',         NULL, NULL),
+('0001844', 'Frank Whaley',        NULL, NULL),
+('0824882', 'Burr Steers',         NULL, NULL),
+('0000609', 'Ving Rhames',         NULL, NULL),
+('0000235', 'Uma Thurman',         NULL, NULL),
+('0004744', 'Lawrence Bender',     NULL, NULL),
+('0000362', 'Danny DeVito',        NULL, NULL),
+('0321621', 'Richard N. Gladstein',NULL, NULL),
+('0787834', 'Michael Shamberg',    NULL, NULL),
+('0792049', 'Stacey Sher',         NULL, NULL),
+('0918424', 'Bob Weinstein',       NULL, NULL),
+('0005544', 'Harvey Weinstein',    NULL, NULL),
+('0000401', 'Laurence Fishburne',  NULL, NULL),
+('0005251', 'Carrie-Anne Moss',    NULL, NULL),
+('0915989', 'Hugo Weaving',        NULL, NULL),
+('0287825', 'Gloria Foster',       NULL, NULL),
+('0001592', 'Joe Pantoliano',      NULL, NULL),
+('0159059', 'Marcus Chong',        NULL, NULL),
+('0032810', 'Julian Arahanga',     NULL, NULL),
+('0905154', 'Lana Wachowski',      NULL, NULL),
+('0905152', 'Lilly Wachowski',     NULL, NULL),
+('0075732', 'Bruce Berman',        NULL, NULL),
+('0185621', 'Dan Cracchiolo',      NULL, NULL),
+('0400492', 'Carol Hughes',        NULL, NULL);
+```
 
-- **Persons** — the `INSERT INTO person` block
-- **Person trademarks** — the `INSERT INTO person_trademark` block
-- **Movie genres** — the `INSERT INTO movie_genre` blocks (using the name-based lookup)
-- **Movie languages** — the `INSERT INTO movie_language` block
-- **Movie–person relationships** — all `INSERT INTO movie_person` blocks
+### Person trademarks
 
-> **Note:** CockroachDB is fully SQL-standard here. Every INSERT statement from the PostgreSQL workshop runs without modification.
+```sql
+INSERT INTO person_trademark (person_id, trademark) VALUES
+('0000246', 'Frequently plays a man who suffered a tragedy, had a crisis of confidence or conscience'),
+('0000246', 'Frequently plays likeable wisecracking heroes with a moral centre'),
+('0000246', 'Headlines action-adventures, often playing a policeman, hitman or someone in the military'),
+('0000246', 'Often plays men who get caught up in situations far beyond their control'),
+('0000246', 'Sardonic one-liners'),
+('0000246', 'Shaven head'),
+('0000246', 'Distinctive, gravelly voice'),
+('0000206', 'Intense contemplative gaze'),
+('0000206', 'Deep husky voice'),
+('0000206', 'Known for playing stoic reserved characters'),
+('0000233', 'Lead characters usually drive General Motors vehicles, particularly Chevrolet and Cadillac'),
+('0000233', 'Briefcases and suitcases play an important role in many of his films'),
+('0000233', 'Makes references to cult movies and television'),
+('0000233', 'His films usually have a shot from inside an automobile trunk'),
+('0000233', 'Often uses an unconventional storytelling device in his films');
+```
+
+### Movie genres
+
+```sql
+-- Pulp Fiction: Crime, Drama
+INSERT INTO movie_genre (movie_id, genre_id)
+SELECT '0110912', genre_id FROM genre WHERE name IN ('Crime','Drama');
+
+-- The Matrix: Action, Sci-Fi
+INSERT INTO movie_genre (movie_id, genre_id)
+SELECT '0133093', genre_id FROM genre WHERE name IN ('Action','Sci-Fi');
+
+-- Top-50 movies
+INSERT INTO movie_genre (movie_id, genre_id)
+SELECT t.movie_id, g.genre_id FROM (VALUES
+    ('0111161','Drama'),
+    ('0068646','Crime'),  ('0068646','Drama'),
+    ('0071562','Crime'),  ('0071562','Drama'),
+    ('0468569','Action'), ('0468569','Crime'), ('0468569','Drama'), ('0468569','Thriller'),
+    ('0050083','Drama'),
+    ('0108052','Biography'),('0108052','Drama'),('0108052','History'),
+    ('0167260','Adventure'),('0167260','Drama'),('0167260','Fantasy'),
+    ('0060196','Western'),
+    ('0137523','Drama'),
+    ('4154796','Action'),  ('4154796','Adventure'),('4154796','Fantasy'),('4154796','Sci-Fi'),
+    ('0120737','Adventure'),('0120737','Drama'),  ('0120737','Fantasy'),
+    ('0109830','Drama'),   ('0109830','Romance'),
+    ('0080684','Action'),  ('0080684','Adventure'),('0080684','Fantasy'),('0080684','Sci-Fi'),
+    ('1375666','Action'),  ('1375666','Adventure'),('1375666','Sci-Fi'),('1375666','Thriller'),
+    ('0167261','Adventure'),('0167261','Drama'),  ('0167261','Fantasy'),
+    ('0073486','Drama'),
+    ('0099685','Biography'),('0099685','Crime'),  ('0099685','Drama'),
+    ('0047478','Adventure'),('0047478','Drama'),
+    ('0114369','Crime'),   ('0114369','Drama'),   ('0114369','Mystery'),('0114369','Thriller'),
+    ('0317248','Crime'),   ('0317248','Drama'),
+    ('0076759','Action'),  ('0076759','Adventure'),('0076759','Fantasy'),('0076759','Sci-Fi'),
+    ('0102926','Crime'),   ('0102926','Drama'),   ('0102926','Thriller'),
+    ('0038650','Drama'),   ('0038650','Family'),  ('0038650','Fantasy'),
+    ('0118799','Comedy'),  ('0118799','Drama'),   ('0118799','Romance'),('0118799','War'),
+    ('0245429','Animation'),('0245429','Adventure'),('0245429','Family'),('0245429','Fantasy'),('0245429','Mystery'),
+    ('0120815','Drama'),   ('0120815','War'),
+    ('0114814','Crime'),   ('0114814','Mystery'), ('0114814','Thriller'),
+    ('0110413','Action'),  ('0110413','Crime'),   ('0110413','Drama'),  ('0110413','Thriller'),
+    ('0120689','Crime'),   ('0120689','Drama'),   ('0120689','Fantasy'),('0120689','Mystery'),
+    ('0816692','Adventure'),('0816692','Drama'),  ('0816692','Sci-Fi'),
+    ('0054215','Horror'),  ('0054215','Mystery'), ('0054215','Thriller'),
+    ('0120586','Drama'),
+    ('0021749','Comedy'),  ('0021749','Drama'),   ('0021749','Romance'),
+    ('0034583','Drama'),   ('0034583','Romance'), ('0034583','War'),
+    ('0064116','Western'),
+    ('0253474','Biography'),('0253474','Drama'),  ('0253474','Music'),  ('0253474','War'),
+    ('0027977','Comedy'),  ('0027977','Drama'),   ('0027977','Family'), ('0027977','Romance'),
+    ('1675434','Biography'),('1675434','Comedy'), ('1675434','Drama'),
+    ('0407887','Crime'),   ('0407887','Drama'),   ('0407887','Thriller'),
+    ('0088763','Adventure'),('0088763','Comedy'), ('0088763','Sci-Fi'),
+    ('0103064','Action'),  ('0103064','Sci-Fi'),
+    ('2582802','Drama'),   ('2582802','Music'),
+    ('0110357','Animation'),('0110357','Adventure'),('0110357','Drama'),('0110357','Family'),('0110357','Musical'),
+    ('0047396','Mystery'), ('0047396','Thriller'),
+    ('0082971','Action'),  ('0082971','Adventure'),
+    ('0172495','Action'),  ('0172495','Adventure'),('0172495','Drama'),
+    ('0482571','Drama'),   ('0482571','Mystery'),  ('0482571','Sci-Fi'),('0482571','Thriller'),
+    ('0078788','Drama'),   ('0078788','War')
+) AS t(movie_id, genre_name)
+JOIN genre g ON g.name = t.genre_name;
+```
+
+### Movie languages
+
+```sql
+INSERT INTO movie_language (movie_id, language_id)
+SELECT '0110912', language_id FROM language WHERE code IN ('en','es','fr');
+
+INSERT INTO movie_language (movie_id, language_id)
+SELECT '0133093', language_id FROM language WHERE code = 'en';
+```
+
+### Movie–person relationships
+
+```sql
+-- Pulp Fiction cast
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('0110912','0000619','actor'), ('0110912','0001625','actor'),
+('0110912','0522503','actor'), ('0110912','0000237','actor'),
+('0110912','0000168','actor'), ('0110912','0482851','actor'),
+('0110912','0001844','actor'), ('0110912','0824882','actor'),
+('0110912','0000246','actor'), ('0110912','0000609','actor'),
+('0110912','0000235','actor'), ('0110912','0000233','actor'),
+('0110912','0000233','director'),
+('0110912','0004744','producer'),('0110912','0000362','producer'),
+('0110912','0321621','producer'),('0110912','0787834','producer'),
+('0110912','0792049','producer'),('0110912','0918424','producer'),
+('0110912','0005544','producer');
+
+-- The Matrix cast
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('0133093','0000206','actor'), ('0133093','0000401','actor'),
+('0133093','0005251','actor'), ('0133093','0915989','actor'),
+('0133093','0287825','actor'), ('0133093','0001592','actor'),
+('0133093','0159059','actor'), ('0133093','0032810','actor'),
+('0133093','0905154','director'),('0133093','0905152','director'),
+('0133093','0075732','producer'),('0133093','0185621','producer'),
+('0133093','0400492','producer');
+
+-- Bruce Willis film appearances
+INSERT INTO movie (movie_id, title, year) VALUES
+('1606378','A Good Day to Die Hard',     2013),
+('0217869','Unbreakable',                2000),
+('0377917','The Fifth Element',          1997),
+('0112864','Die Hard: With a Vengeance', 1995)
+ON CONFLICT (movie_id) DO NOTHING;
+
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('1606378','0000246','actor'),
+('0217869','0000246','actor'),
+('0377917','0000246','actor'),
+('0112864','0000246','actor');
+
+-- Keanu Reeves film appearances
+INSERT INTO movie (movie_id, title, year) VALUES
+('0234215','The Matrix Reloaded', 2003),
+('0111257','Speed',               1994)
+ON CONFLICT (movie_id) DO NOTHING;
+
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('0234215','0000206','actor'),
+('0111257','0000206','actor');
+
+-- Sandra Bullock film appearances
+INSERT INTO movie (movie_id, title, year) VALUES
+('2737304','Bird Box',                 2018),
+('0120179','Speed 2: Cruise Control',  1997),
+('0212346','Miss Congeniality',        2000)
+ON CONFLICT (movie_id) DO NOTHING;
+
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('2737304','0000113','actor'),
+('0120179','0000113','actor'),
+('0111257','0000113','actor'),
+('0212346','0000113','actor');
+
+-- Quentin Tarantino as actor/director
+INSERT INTO movie (movie_id, title, year) VALUES
+('0378194','Kill Bill: Vol. 2',   2004),
+('0116367','From Dusk Till Dawn', 1996),
+('0119396','Jackie Brown',        1997)
+ON CONFLICT (movie_id) DO NOTHING;
+
+INSERT INTO movie_person (movie_id, person_id, role) VALUES
+('0378194','0000233','actor'),
+('0116367','0000233','actor'),
+('0119396','0000233','director');
+```
 
 Verify the row counts:
 
