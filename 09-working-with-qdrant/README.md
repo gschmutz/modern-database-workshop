@@ -1279,7 +1279,7 @@ for doc, score in results:
 
 > Try other queries such as `"alternatives to relational databases"`, `"HNSW graph structure"`, or `"use cases for vector databases"` to explore the indexed content.
 
-> Increase the `k` to a higher value to have more documents returned from the search.
+> Increase parameter `k` to a higher value to have the search return more than three documents.
 
 ### Cell 17 — Cleaning up
 
