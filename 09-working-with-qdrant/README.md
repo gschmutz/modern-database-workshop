@@ -55,7 +55,7 @@ Points are stored in a **collection**, which defines the vector size and distanc
 
 Open a browser and navigate to <http://dataplatform:6333/dashboard>.
 
-![Qdrant Dashboard](./images/qdrant-dashboard-1.png)
+![Qdrant Dashboard](./images/qdrant-dashboard.png)
 
 The Dashboard lets you browse collections, inspect individual points, and run ad-hoc searches — all without writing any code.
 
@@ -65,7 +65,9 @@ A **collection** defines the vector space: every point in it must have a vector 
 
 ### Create a collection via the REST API
 
-Qdrant exposes a full REST API at `http://dataplatform:6333`. Use `curl` to create a collection called `databases` whose vectors have **4 dimensions** and use **Cosine** similarity:
+Qdrant exposes a full REST API at `http://dataplatform:6333`. 
+
+From a terminal window, use `curl` to create a collection called `databases` whose vectors have **4 dimensions** and use **Cosine** similarity:
 
 ```bash
 curl -X PUT http://dataplatform:6333/collections/databases \
@@ -81,8 +83,11 @@ curl -X PUT http://dataplatform:6333/collections/databases \
 ```json
 {"result":true,"status":"ok","time":0.003}
 ```
-
 > **What you should see:** `"result": true` confirming the collection was created.
+
+Alternatively you can also use the built-in **Qdrant Console** available here <http://dataplatform:6333/dashboard#/console> but you need to reformat the commands.
+
+![Qdrant Dashboard](./images/qdrant-console.png)
 
 ### List all collections
 
@@ -101,6 +106,10 @@ curl http://dataplatform:6333/collections
   "time": 0.001
 }
 ```
+
+You can also see the collections from the WebUI by clicking on **Collections**
+
+![Qdrant Dashboard](./images/qdrant-collections.png)
 
 ### Inspect the collection
 
@@ -164,9 +173,9 @@ curl http://dataplatform:6333/collections/databases | jq
 
 > **What you should see:** Collection metadata including `"points_count": 0` (no data yet) and the configured vector size of 4.
 
-The collection is also visible in the Dashboard — refresh the page and it will appear in the list.
+The collection info can also be viewed in the Dashboard by clicking on the collection and navigating to the **Info** tab
 
-![Qdrant Dashboard collections](./images/qdrant-dashboard-2.png)
+![Qdrant Dashboard collections](./images/qdtrant-collection-info.png)
 
 ## Inserting Points
 
@@ -236,18 +245,27 @@ curl -X PUT http://dataplatform:6333/collections/databases/points \
 ### Retrieve a point by ID
 
 ```bash
-curl http://dataplatform:6333/collections/databases/points/1
+curl http://dataplatform:6333/collections/databases/points/1 | jq
 ```
 
 ```json
 {
   "result": {
     "id": 1,
-    "payload": {"name": "Redis", "type": "key-value", "year": 2009},
-    "vector": [0.98, 0.35, 0.65, 0.40]
+    "payload": {
+      "name": "Redis",
+      "type": "key-value",
+      "year": 2009
+    },
+    "vector": [
+      0.7593934,
+      0.27121192,
+      0.5036793,
+      0.3099565
+    ]
   },
   "status": "ok",
-  "time": 0.001
+  "time": 0.000415634
 }
 ```
 
@@ -256,7 +274,7 @@ curl http://dataplatform:6333/collections/databases/points/1
 ```bash
 curl -X POST http://dataplatform:6333/collections/databases/points \
   -H 'Content-Type: application/json' \
-  -d '{"ids": [1, 3, 5]}'
+  -d '{"ids": [1, 3, 5], "with_vectors":true}'
 ```
 
 ```json
@@ -275,7 +293,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points \
 
 The Dashboard will now show the collection with 7 points under the **Collections** tab.
 
-![Qdrant collection with points](./images/qdrant-dashboard-3.png)
+![Qdrant collection with points](./images/qdrant-collection-points.png)
 
 ## Vector Similarity Search
 
@@ -290,7 +308,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
     "vector": [0.95, 0.30, 0.70, 0.45],
     "limit": 3,
     "with_payload": true
-  }'
+  }' | jq
 ```
 
 ```json
@@ -298,25 +316,37 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
   "result": [
     {
       "id": 1,
-      "version": 0,
-      "score": 0.9995,
-      "payload": {"name": "Redis", "type": "key-value", "year": 2009}
-    },
-    {
-      "id": 6,
-      "version": 0,
-      "score": 0.9903,
-      "payload": {"name": "InfluxDB", "type": "time-series", "year": 2013}
+      "version": 1,
+      "score": 0.99750996,
+      "payload": {
+        "name": "Redis",
+        "type": "key-value",
+        "year": 2009
+      }
     },
     {
       "id": 3,
-      "version": 0,
-      "score": 0.9831,
-      "payload": {"name": "Cassandra", "type": "wide-column", "year": 2008}
+      "version": 1,
+      "score": 0.98177105,
+      "payload": {
+        "name": "Cassandra",
+        "type": "wide-column",
+        "year": 2008
+      }
+    },
+    {
+      "id": 6,
+      "version": 1,
+      "score": 0.97377276,
+      "payload": {
+        "name": "InfluxDB",
+        "type": "time-series",
+        "year": 2013
+      }
     }
   ],
   "status": "ok",
-  "time": 0.003
+  "time": 0.001034812
 }
 ```
 
@@ -336,7 +366,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
     "limit": 10,
     "score_threshold": 0.99,
     "with_payload": true
-  }'
+  }' | jq
 ```
 
 ```json
@@ -344,12 +374,17 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
   "result": [
     {
       "id": 1,
-      "score": 0.9995,
-      "payload": {"name": "Redis", "type": "key-value", "year": 2009}
+      "version": 1,
+      "score": 0.99750996,
+      "payload": {
+        "name": "Redis",
+        "type": "key-value",
+        "year": 2009
+      }
     }
   ],
   "status": "ok",
-  "time": 0.002
+  "time": 0.004430643
 }
 ```
 
@@ -361,7 +396,7 @@ Qdrant can combine vector search with payload filters in a single query — it i
 
 ### Filter by exact match
 
-Find the most query-flexible database (`high dimension 1`) but only within the `document` type:
+Find the most query-flexible database (high second dimension) but only within the `document` type:
 
 ```bash
 curl -X POST http://dataplatform:6333/collections/databases/points/search \
@@ -378,7 +413,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
         }
       ]
     }
-  }'
+  }' | jq
 ```
 
 ```json
@@ -386,17 +421,27 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
   "result": [
     {
       "id": 4,
-      "score": 0.9912,
-      "payload": {"name": "Elasticsearch", "type": "document", "year": 2010}
+      "version": 1,
+      "score": 0.9948616,
+      "payload": {
+        "name": "Elasticsearch",
+        "type": "document",
+        "year": 2010
+      }
     },
     {
       "id": 2,
-      "score": 0.9704,
-      "payload": {"name": "MongoDB", "type": "document", "year": 2009}
+      "version": 1,
+      "score": 0.9847196,
+      "payload": {
+        "name": "MongoDB",
+        "type": "document",
+        "year": 2009
+      }
     }
   ],
   "status": "ok",
-  "time": 0.002
+  "time": 0.002731373
 }
 ```
 
@@ -421,7 +466,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
         }
       ]
     }
-  }'
+  }' | jq
 ```
 
 ```json
@@ -429,22 +474,37 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
   "result": [
     {
       "id": 7,
-      "score": 0.9942,
-      "payload": {"name": "Qdrant", "type": "vector", "year": 2021}
+      "version": 1,
+      "score": 0.9939255,
+      "payload": {
+        "name": "Qdrant",
+        "type": "vector",
+        "year": 2021
+      }
     },
     {
       "id": 4,
-      "score": 0.9871,
-      "payload": {"name": "Elasticsearch", "type": "document", "year": 2010}
+      "version": 1,
+      "score": 0.9868016,
+      "payload": {
+        "name": "Elasticsearch",
+        "type": "document",
+        "year": 2010
+      }
     },
     {
       "id": 6,
-      "score": 0.9822,
-      "payload": {"name": "InfluxDB", "type": "time-series", "year": 2013}
+      "version": 1,
+      "score": 0.9714566,
+      "payload": {
+        "name": "InfluxDB",
+        "type": "time-series",
+        "year": 2013
+      }
     }
   ],
   "status": "ok",
-  "time": 0.002
+  "time": 0.001380097
 }
 ```
 
@@ -469,7 +529,7 @@ curl -X POST http://dataplatform:6333/collections/databases/points/search \
         }
       ]
     }
-  }'
+  }' | jq
 ```
 
 ```json
@@ -612,20 +672,20 @@ print(client.get_collection("tech_articles").points_count)
 ### Cell 5 — Vector similarity search
 
 ```python
-results = client.search(
+results = client.query_points(
     collection_name="tech_articles",
-    query_vector=[0.95, 0.30, 0.70, 0.45],
+    query=[0.95, 0.30, 0.70, 0.45],
     limit=3,
-)
+).points
 
 for hit in results:
     print(f"{hit.score:.4f}  {hit.payload['name']} ({hit.payload['type']})")
 ```
 
 ```
-0.9995  Redis (key-value)
-0.9903  InfluxDB (time-series)
-0.9831  Cassandra (wide-column)
+0.9975  Redis (key-value)
+0.9818  Cassandra (wide-column)
+0.9738  InfluxDB (time-series)
 ```
 
 > **What you should see:** The three databases whose feature profiles are closest to the query. Redis should rank first.
@@ -635,24 +695,24 @@ for hit in results:
 ```python
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-results = client.search(
+results = client.query_points(
     collection_name="tech_articles",
-    query_vector=[0.50, 0.95, 0.80, 0.80],
+    query=[0.50, 0.95, 0.80, 0.80],
     query_filter=Filter(
         must=[
             FieldCondition(key="type", match=MatchValue(value="document"))
         ]
     ),
     limit=5,
-)
+).points
 
 for hit in results:
     print(f"{hit.score:.4f}  {hit.payload['name']} (year: {hit.payload['year']})")
 ```
 
 ```
-0.9912  Elasticsearch (year: 2010)
-0.9704  MongoDB (year: 2009)
+0.9949  Elasticsearch (year: 2010)
+0.9847  MongoDB (year: 2009)
 ```
 
 > **What you should see:** Only document-type databases are returned. The filter is applied inside the vector scan — not as a post-processing step.
@@ -662,25 +722,25 @@ for hit in results:
 ```python
 from qdrant_client.models import Range
 
-results = client.search(
+results = client.query_points(
     collection_name="tech_articles",
-    query_vector=[0.70, 0.70, 0.95, 0.65],
+    query=[0.70, 0.70, 0.95, 0.65],
     query_filter=Filter(
         must=[
             FieldCondition(key="year", range=Range(gt=2009))
         ]
     ),
     limit=5,
-)
+).points
 
 for hit in results:
     print(f"{hit.score:.4f}  {hit.payload['name']} (year: {hit.payload['year']})")
 ```
 
 ```
-0.9942  Qdrant (year: 2021)
-0.9871  Elasticsearch (year: 2010)
-0.9822  InfluxDB (year: 2013)
+0.9939  Qdrant (year: 2021)
+0.9868  Elasticsearch (year: 2010)
+0.9715  InfluxDB (year: 2013)
 ```
 
 > **What you should see:** Only databases released after 2009 appear. Qdrant (2021) ranks first because it most closely matches the high-scalability query profile.
