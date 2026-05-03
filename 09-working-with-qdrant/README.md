@@ -98,6 +98,7 @@ curl -X PUT http://dataplatform:6333/collections/databases \
 > |-------|--------|----------|
 > | `"Cosine"` | Cosine similarity | Text and sentence embeddings — measures the angle between vectors, so magnitude differences are ignored |
 > | `"Dot"` | Dot product | Normalized embeddings (unit vectors) where direction and magnitude both matter; fastest option when vectors are pre-normalized |
+> | `"Euclid"` | Euclidean (L2) distance | Image features and spatial data where absolute distance between points matters |
 > | `"Manhattan"` | Manhattan (L1) distance | Sparse or high-dimensional data where L1 distance is more robust than L2 |
 >
 > The choice is made once at collection creation and cannot be changed later. For most NLP and semantic search use cases, `"Cosine"` is the right default.
