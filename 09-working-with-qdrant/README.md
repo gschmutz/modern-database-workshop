@@ -1185,7 +1185,7 @@ Query: 'event streaming and message queues'
 
 ## LangChain Integration
 
-LangChain is a framework for building applications that combine language models with external data sources and tools. Its Qdrant integration handles the full pipeline — loading a document, splitting it into chunks, embedding each chunk, and storing the results — in just a few lines. This makes it the standard approach for building **Retrieval-Augmented Generation (RAG)** applications on top of Qdrant.
+[LangChain](https://www.langchain.com) is a framework for building applications that combine language models with external data sources and tools. Its Qdrant integration handles the full pipeline — loading a document, splitting it into chunks, embedding each chunk, and storing the results — in just a few lines. This makes it the standard approach for building **Retrieval-Augmented Generation (RAG)** applications on top of Qdrant.
 
 In this section we load the Qdrant concepts documentation page, chunk it, embed it with the same `all-MiniLM-L6-v2` model, and index it into Qdrant for semantic retrieval.
 
@@ -1193,7 +1193,7 @@ In this section we load the Qdrant concepts documentation page, chunk it, embed 
 
 ```python
 import sys
-!{sys.executable} -m pip install langchain langchain-community langchain-qdrant langchain-huggingface beautifulsoup4
+!{sys.executable} -m pip install langchain langchain-community langchain-text-splitters langchain-qdrant langchain-huggingface beautifulsoup4
 ```
 
 > **What you should see:** pip output ending with `Successfully installed ...`. The key packages are:
