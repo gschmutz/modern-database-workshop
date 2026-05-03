@@ -17,6 +17,7 @@ In this workshop we will learn how to use **Qdrant**, an AI-native vector databa
 - [Recommendation API](#recommendation-api)
 - [Working with Qdrant from Python](#working-with-qdrant-from-python)
 - [Real Embeddings with Sentence Transformers](#real-embeddings-with-sentence-transformers)
+- [LangChain Integration](#langchain-integration)
 
 ## What you will learn
 
@@ -31,6 +32,7 @@ In this workshop we will learn how to use **Qdrant**, an AI-native vector databa
 - How to use the **`should` (OR) filter** to match any one of several conditions
 - How to use the **Recommendation API** to find similar items without supplying a query vector
 - How to generate real **text embeddings** with `sentence-transformers` and perform semantic search
+- How to use **LangChain** to load, chunk, embed, and index a document in Qdrant for retrieval
 
 ## Prerequisites
 
@@ -1181,14 +1183,100 @@ Query: 'event streaming and message queues'
 >
 > Try changing `query_text` to `"fast in-memory store"` (should surface Redis) or `"social network connections"` (should surface the graph database article) to explore the semantic space.
 
+## LangChain Integration
+
+LangChain is a framework for building applications that combine language models with external data sources and tools. Its Qdrant integration handles the full pipeline — loading a document, splitting it into chunks, embedding each chunk, and storing the results — in just a few lines. This makes it the standard approach for building **Retrieval-Augmented Generation (RAG)** applications on top of Qdrant.
+
+In this section we load the Qdrant concepts documentation page, chunk it, embed it with the same `all-MiniLM-L6-v2` model, and index it into Qdrant for semantic retrieval.
+
+### Cell 18 — Install LangChain packages
+
+```python
+import sys
+!{sys.executable} -m pip install langchain langchain-community langchain-qdrant langchain-huggingface beautifulsoup4
+```
+
+> **What you should see:** pip output ending with `Successfully installed ...`. The key packages are:
+> - `langchain-community` — document loaders (including `WebBaseLoader`)
+> - `langchain-qdrant` — the official LangChain ↔ Qdrant vector store integration
+> - `langchain-huggingface` — wraps `sentence-transformers` models as LangChain embeddings
+> - `beautifulsoup4` — required by `WebBaseLoader` to parse HTML pages
+
+### Cell 19 — Load and chunk the Qdrant documentation
+
+```python
+from langchain_community.document_loaders import WebBaseLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+loader = WebBaseLoader("https://qdrant.tech/documentation/concepts/")
+documents = loader.load()
+print(f"Loaded {len(documents)} page(s) — {sum(len(d.page_content) for d in documents):,} characters total")
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+chunks = splitter.split_documents(documents)
+print(f"Split into {len(chunks)} chunks")
+print(f"\nSample chunk:\n{chunks[0].page_content[:300]}")
+```
+
+> **What you should see:** The page loaded and split into a number of chunks of up to 500 characters each with 50-character overlaps. The overlap prevents context being lost at chunk boundaries — a sentence cut off at the end of one chunk also appears at the start of the next.
+>
+> **Note:** `WebBaseLoader` requires outbound internet access from your Jupyter environment. If your setup is network-isolated, replace the loader with `TextLoader("path/to/local-file.txt")` and a local file instead.
+
+### Cell 20 — Embed and index in Qdrant
+
+```python
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams
+
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+client = QdrantClient(host="qdrant", port=6333)
+client.recreate_collection(
+    collection_name="qdrant_docs",
+    vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+)
+
+vector_store = QdrantVectorStore(
+    client=client,
+    collection_name="qdrant_docs",
+    embedding=embeddings,
+)
+vector_store.add_documents(chunks)
+print(f"Indexed {len(chunks)} chunks into 'qdrant_docs'")
+print(f"Collection now has {client.get_collection('qdrant_docs').points_count} points")
+```
+
+> **What you should see:** Each chunk was embedded and stored as a point. LangChain automatically stores the chunk text in the `page_content` payload field and any document metadata (source URL, title) in a `metadata` payload field alongside the vector.
+
+### Cell 21 — Semantic search over the documentation
+
+```python
+query = "How do payload filters work?"
+results = vector_store.similarity_search_with_score(query, k=3)
+
+print(f"Query: '{query}'\n")
+for doc, score in results:
+    print(f"Score:  {score:.4f}")
+    print(f"Source: {doc.metadata.get('source', 'unknown')}")
+    print(f"{doc.page_content[:300]}")
+    print()
+```
+
+> **What you should see:** The three chunks most semantically relevant to the query, each with a cosine similarity score. Results are found by meaning — the exact phrase "payload filters" does not need to appear in the chunk text.
+>
+> Try other queries such as `"What distance metrics are supported?"` or `"How do I delete a collection?"` to explore the indexed content.
+
 ### Cell 17 — Cleaning up
 
-Delete the collection created in this notebook:
+Delete all collections created in this notebook:
 
 ```python
 client.delete_collection("tech_articles")
 client.delete_collection("articles_semantic")
+client.delete_collection("qdrant_docs")
 print(client.get_collections())
 ```
 
-> **What you should see:** A `CollectionsResponse` where neither `tech_articles` nor `articles_semantic` appear in the list.
+> **What you should see:** A `CollectionsResponse` where none of the three collections appear in the list.
