@@ -15,8 +15,8 @@ In this workshop we will learn how to use **Qdrant**, an AI-native vector databa
 - [Filtered Similarity Search](#filtered-similarity-search)
 - [Updating and Deleting Points](#updating-and-deleting-points)
 - [Recommendation API](#recommendation-api)
-- [Real Embeddings with Sentence Transformers](#real-embeddings-with-sentence-transformers)
 - [Working with Qdrant from Python](#working-with-qdrant-from-python)
+- [Real Embeddings with Sentence Transformers](#real-embeddings-with-sentence-transformers)
 
 ## What you will learn
 
@@ -1081,6 +1081,7 @@ articles = [
 texts = [a["title"] for a in articles]
 embeddings = model.encode(texts)
 print(f"Embedding shape: {embeddings.shape}")  # (8, 384)
+print(f"Embeddings: {embeddings}")
 
 client.recreate_collection(
     collection_name="articles_semantic",
@@ -1127,9 +1128,9 @@ for hit in results:
 ```
 Query: 'event streaming and message queues'
 
-0.8912  [streaming]  Building real-time pipelines with Kafka Streams
-0.8745  [streaming]  Introduction to Apache Kafka and event streaming
-0.6123  [key-value]  Using Redis as a high-speed cache layer
+0.6216  [streaming]  Introduction to Apache Kafka and event streaming
+0.4366  [streaming]  Building real-time pipelines with Kafka Streams
+0.2555  [time-series]  Time-series data and InfluxDB
 ```
 
 > **What you should see:** The two Kafka articles rank first because their embeddings are semantically close to the query — even though the query phrase "message queues" does not appear in any title. This is the key difference from keyword search: similarity is based on meaning, not exact word overlap.
