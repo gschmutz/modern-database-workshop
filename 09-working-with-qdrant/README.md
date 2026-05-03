@@ -977,9 +977,9 @@ for hit in results:
 ```
 
 ```
-0.9923  MongoDB (document)
-0.9901  Elasticsearch (document)
-0.9789  Neo4j (graph)
+0.9975  MongoDB (document)
+0.9947  Elasticsearch (document)
+0.9777  Neo4j (graph)
 ```
 
 > **What you should see:** Only the three databases whose type is `document` or `graph`. The `should` clause is satisfied by matching any one condition — the similarity score then ranks them within that subset.
@@ -989,11 +989,11 @@ for hit in results:
 Use the recommendation API to find similar items by providing positive and negative example IDs rather than a query vector:
 
 ```python
-from qdrant_client.models import RecommendQuery
+from qdrant_client.models import RecommendQuery, RecommendInput
 
 results = client.query_points(
     collection_name="tech_articles",
-    query=RecommendQuery(positive=[1, 3], negative=[5]),
+    query=RecommendQuery(recommend=RecommendInput(positive=[1, 3], negative=[5])),
     limit=3,
 ).points
 
@@ -1002,9 +1002,9 @@ for hit in results:
 ```
 
 ```
-0.9912  InfluxDB (time-series)
-0.9876  Qdrant (vector)
-0.9734  MongoDB (document)
+0.8323  InfluxDB (time-series)
+0.7827  Qdrant (vector)
+0.6705  MongoDB (document)
 ```
 
 > **What you should see:** Databases that share the high-throughput, high-scalability profile of Redis (id 1) and Cassandra (id 3) while being dissimilar to Neo4j (id 5). The reference points are never included in the results.
