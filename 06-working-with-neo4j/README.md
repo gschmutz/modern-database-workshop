@@ -1709,3 +1709,13 @@ We can also use MCP to add new data to the graph
 After the last request the graph should also include **Genre** nodes
 
 ![Alt Image Text](./images/neo4j-after-mcp-add.png "Neo4J Browser")
+
+Let's also add a story for each movie and extract named entities
+
+- *"get the story or abstract for each movie and add it as a story property"*
+- *"extract entities from the story such as character, event, location, ..  from the abstract and add it as new nodes linking to the movie where you have extracted it froms"*
+
+Add more movies (optional)
+
+- *"what other movies would you add to have the top 50 movies in the database?"*
+- *"add them with the actors, directors similar to the other ones. also add abstract and extract entities"*
