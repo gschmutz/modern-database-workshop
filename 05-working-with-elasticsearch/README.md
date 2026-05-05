@@ -637,7 +637,7 @@ Below is an example using both a Query and a Filter.
 
 In the query below we have a bool query - which is essentially allowing us to combine conditions together. Within the bool query we use a `must` which is essentially the equivalent of an AND logical query. Additionally within the `bool` query we have a filter which further applies a range against the year attribute.
 
-So we basically want to see all the movies which have `star` in the title and have been release after `2010`
+So we basically want to see all the movies which have `star` in the title and have been release after `2000`
 
 ```bash
 curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_search?pretty -d '
@@ -645,7 +645,7 @@ curl -H "Content-Type: application/json" -XGET http://dataplatform:9200/movies/_
     "query": {
         "bool": { 
             "must": { "term": { "title": "star" } },
-            "filter": { "range": { "year": { "gte": 2000 } }}
+            "filter": { "range": { "year": { "gte": "2000" } }}
         }
     }
 }'
@@ -655,7 +655,7 @@ Types of **filters**:
 
 * `term` - filter by exact values { "term": { "year": 2014 } }
 * `terms` - match if any exact values in a list match {"terms": { "genre": ["Sci-Fi", "Adventure"] }}
-* `range` - find numbers or dates in a given range { "range": { "year": { "gte": 2010 } }
+* `range` - find numbers or dates in a given range { "range": { "year": { "gte": "2000" } }
 * `exists` - find documents where the field exists { "exists": { "field": "tags" } }
 * `missing` - find documents where the field is missing { "missing": { "field": "tags" } }
 * `bool` - combine filters with Boolean logic (must (logical AND), must_not (logical NOT), should (logical OR))
