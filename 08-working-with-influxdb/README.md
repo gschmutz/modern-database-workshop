@@ -223,7 +223,7 @@ IMPORTANT: Store this token securely, as it will not be shown again.
 
 > **What you should see:** a newly generated token string starting with `apiv3_`.
 
-> **What just happened?** an operator-level token was created in InfluxDB 3.x — this token has full admin access and must be stored securely as it is shown only once
+> **What just happened?** an operator-level token was created in InfluxDB 3.x — this token has full admin access and must be stored securely as it is shown only once. We will need later again when creating a server connection from the **Influxdb3 Explorer**.
 
 Navigate to the docker folder
 
@@ -699,7 +699,7 @@ In a browser window, navigate to <http://dataplatform:28264>.
 
 ### Create a server connection
 
-Click on the **Connect Your First Server** button and enter the following values (make sure to replace the token with the one you have generated before):
+Click on the **Connect Your First Server** button and enter the following values (make sure to replace the token with the one you have generated before: `echo $PLATYS_INFLUXDB_TOKEN`):
 
  * **Server Name**: `demo`
  * **Server URL**: `influxdb3:8181`
