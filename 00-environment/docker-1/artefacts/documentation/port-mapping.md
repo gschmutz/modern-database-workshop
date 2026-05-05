@@ -448,6 +448,9 @@ Container Port(s) | Internal Port(s)           | Service (alternatives) |
 23820 | 23820 | infinity (http) |
 24224 | 24224 | fluentd |
 24225 | 24224 | fluent-bit |
+26257 | 26257 | cockroachdb-1 |
+26258 | 26257 | cockroachdb-2 |
+26259 | 26257 | cockroachdb-3 |
 26500 | 26500 | zeebe-1 |
 27017 | 27017 | mongodb-1 |
 27018 | 27017 | mongodb-2 |
@@ -826,8 +829,8 @@ Container Port(s) | Internal Port(s)           | Service (alternatives) |
 28268 | 8443 | trino-lb (https) |
 28269 | 9090 | trino-lb (prometheus) |
 28270 | 8080 | trino-gateway |
-28271 | 8000 | neo4j-mcp-cypher |
-28272 | 8000 | neo4j-mcp-memory |
+28271 | 8000 | neo4j-mcp |
+28272 | |  |
 28273 | 3000 | presidio-analyzer |
 28274 | 8000 | presidio-anonymizer |
 28275 | 8181 | lakekeeper |
@@ -861,6 +864,9 @@ Container Port(s) | Internal Port(s)           | Service (alternatives) |
 28403 | 8000 | mongo-mcp |
 28404 | 8000 | postgresql-mcp |
 28405 | 3000 | better-chatbot |
+28406 | 8080 | cockroachdb-1 |
+28407 | 8080 | cockroachdb-2 |
+28408 | 8080 | cockroachdb-3 |
 
 ## Ports > 28500
 
