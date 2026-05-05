@@ -1,1 +1,0 @@
-Contains the data of chronograf service, if flag INFLUXDB_CHRONOGRAF_volume_map_data is set to true.
