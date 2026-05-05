@@ -15,7 +15,7 @@ For this workshop we will be using an IoT device/sensor simulator available via 
 - [Running the Simulator and publish to MQTT](#running-the-simulator-and-publish-to-mqtt)
 - [Using an MQTT Client to view messages](#using-an-mqtt-client-to-view-messages)
 - [Using HiveMQ Web UI](#using-hivemq-web-ui)
-- [Configure Telegraf with a access token](#configure-telegraf-with-a-access-token)
+- [Configure Telegraf with an access token](#configure-telegraf-with-an-access-token)
 - [Using Telegraf to retrieve values from MQTT and store in InfluxDB](#using-telegraf-to-retrieve-values-from-mqtt-and-store-in-influxdb)
 - [Querying Data with the InfluxDB 3.x CLI](#querying-data-with-the-influxdb-3x-cli)
 - [Querying Data with the InfluxDB Explorer UI](#querying-data-with-the-influxdb-explorer-ui)
@@ -181,13 +181,14 @@ if we "pretty-print" it then it is more visible
 ```
 
 > **What you should see:** one message per home containing a `rooms` array with per-room sensor readings.
+
 > **What just happened?** the `smart_home` simulator generates one JSON message per home per interval, with nested room-level sensor data for temperature, humidity, and appliance states
 
 We can see that one message of the `smart_home` simulator contains messages for one home with multiple rooms, each providing `temperature`, `humidity` and some other metrics. 
 
 Let's use Telegraf to retrieve them from MQTT and store it in InfluxDB. 
 
-## Configure Telegraf with a access token
+## Configure Telegraf with an access token
 
 Telegraf, a server-based agent, collects and sends metrics and events from databases, systems, and IoT sensors. Written in Go, Telegraf compiles into a single binary with no external dependencies–requiring very minimal memory.
 
@@ -221,6 +222,7 @@ IMPORTANT: Store this token securely, as it will not be shown again.
 ```
 
 > **What you should see:** a newly generated token string starting with `apiv3_`.
+
 > **What just happened?** an operator-level token was created in InfluxDB 3.x — this token has full admin access and must be stored securely as it is shown only once
 
 Navigate to the docker folder
@@ -270,6 +272,7 @@ A `docker logs -f telegraf` should show no more errors:
 ```
 
 > **What you should see:** log lines showing `Successfully connected to outputs.influxdb_v3` and periodic `Wrote batch of 1 metrics` lines with no errors.
+
 > **What just happened?** Telegraf re-read the `.env` file containing the token and can now authenticate with InfluxDB 3.x
 
 ## Using Telegraf to retrieve values from MQTT and store in InfluxDB
@@ -491,6 +494,7 @@ You should see an output similar to the one below
 ```
 
 > **What you should see:** Telegraf loads the new config, connects to `mosquitto-1:1883`, and immediately starts writing batches of 1000 metrics.
+
 > **What just happened?** Telegraf's MQTT consumer subscribed to `mqttx/simulate/#`, parsed the JSON payload using the `json_v2` format, extracted the room objects as individual metrics named `smart_home`, and forwarded them to InfluxDB 3.x using the `influxdb_v3` output plugin
 
 Because debug is enabled in the `telegraf.conf` we see additional output whenever data is flushed to InfluxDB.
@@ -596,6 +600,7 @@ The output will look similar to this:
 ```
 
 > **What you should see:** rows with columns `time`, `id`, `owner`, `room_type`, `temperature`, `humidity` — one row per room per home per interval, most recent first.
+
 > **What just happened?** InfluxDB 3.x stored each Telegraf metric as a row in the `smart_home` table, with tags (`id`, `owner`, `room_type`) as indexed columns and fields (`temperature`, `humidity`, etc.) as regular columns
 
 ### Filter by room type
@@ -653,6 +658,7 @@ You should see output similar to:
 ```
 
 > **What you should see:** one row per room type with averaged temperature and humidity.
+
 > **What just happened?** InfluxDB 3.x executed the SQL aggregation natively — it supports standard SQL GROUP BY with aggregate functions like AVG, COUNT, MIN, MAX directly on the time-series data
 
 ### Filter by time range
@@ -708,6 +714,7 @@ and then click on **Add Server**. The new server will show up on the main screen
 ![](./images/influxdb-explorer-3.png)
 
 > **What you should see:** the new `demo` server listed on the home screen.
+
 > **What just happened?** Explorer saved the server connection including the token; it will now route all queries to `http://influxdb3:8181` authenticated with that token
 
 ### Select the database
