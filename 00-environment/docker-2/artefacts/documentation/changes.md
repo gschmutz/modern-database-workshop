@@ -16,6 +16,8 @@ See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/plat
  * Mongo MCP
  * Neo4J MCP
  * Postgresql MCP
+ * Better Chatbot
+ * CockroachDB
 
 ### Version upgrades
 
@@ -36,6 +38,7 @@ See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/plat
  * Update `neo4j` to `2026-community`
  * Update `graphdb` to `11.3.2`
  * Update `qdrant` to `1.17`
+ * Update `oracle-adb` to `26.2.4.2-26ai`
 
 ### Enhancements
 
@@ -48,6 +51,7 @@ See [Upgrade to a new platform stack version](https://github.com/TrivadisPF/plat
  * rename `SPARK_install_jars_packages` to `SPARK_install_java_packages`
  * new Trino/Starburst and Presto configuation for Hive S3 named to `hive.properties` - `minio.properties` is deprecated and will be removed in `1.21.0`
  * rename `mcp-trino` to `trino-mcp`
+ * change from `neo4j-cypher-mcp` to `neo4j-mcp` (official one)
 
 ### Bug Fixes
 

@@ -105,41 +105,28 @@ services:
       timeout: 30s
       retries: 10
   #  ================================== Neo4J MCP ========================================== #
-  neo4j-mcp-cypher:
-    image: mcp/neo4j-cypher:latest
-    container_name: neo4j-mcp-cypher
-    hostname: neo4j-mcp-cypher
+  neo4j-mcp:
+    image: mcp/neo4j:latest
+    container_name: neo4j-mcp
+    hostname: neo4j-mcp
     labels:
       com.platys.name: neo4j-mcp
-      com.platys.description: MCP Server for Neo4J (Cypher)
-      com.platys.restapi.title: MCP Server for Neo4J (Cypher)
+      com.platys.description: MCP Server for Neo4J
+      com.platys.restapi.title: MCP Server for Neo4J
       com.platys.restapi.url: http://dataplatform:28271
     ports:
       - 28271:8000
     environment:
-      NEO4J_URL: bolt://neo4j-1:7687
-      NEO4J_USERNAME: neo4j
-      NEO4J_PASSWORD: ${PLATYS_NEO4J_PASSWORD:-abc123abc123}
-      NEO4J_TRANSPORT: sse
-    volumes:
-      - ./data-transfer:/data-transfer
-    restart: unless-stopped
-  neo4j-mcp-memory:
-    image: mcp/neo4j-memory:latest
-    container_name: neo4j-mcp-memory
-    hostname: neo4j-mcp-memory
-    labels:
-      com.platys.name: neo4j-mcp
-      com.platys.description: MCP Server for Neo4J (Memory)
-      com.platys.restapi.title: MCP Server for Neo4J (Memory)
-      com.platys.restapi.url: http://dataplatform:28272
-    ports:
-      - 28272:8000
-    environment:
-      NEO4J_URL: bolt://neo4j-1:7687
-      NEO4J_USERNAME: neo4j
-      NEO4J_PASSWORD: ${PLATYS_NEO4J_PASSWORD:-abc123abc123}
-      NEO4J_TRANSPORT: sse
+      NEO4J_URI: bolt://neo4j-1:7687
+      NEO4J_DATABASE: neo4j
+      NEO4J_READ_ONLY: false
+      NEO4J_TELEMETRY: false
+      NEO4J_SCHEMA_SAMPLE_SIZE: 100
+      NEO4J_TRANSPORT_MODE: http
+      NEO4J_MCP_HTTP_HOST: 0.0.0.0
+      NEO4J_MCP_HTTP_PORT: 8000
+      NEO4J_MCP_HTTP_ALLOWED_ORIGINS: '*'
+      NEO4J_MCP_HTTP_TLS_ENABLED: false
     volumes:
       - ./data-transfer:/data-transfer
     restart: unless-stopped
@@ -280,6 +267,39 @@ services:
     volumes:
       - ./data-transfer:/data-transfer
     restart: unless-stopped
+  #  ================================== CockroachDB ========================================== #  
+  cockroachdb-1:
+    image: cockroachdb/cockroach:v26.1.3
+    container_name: cockroachdb-1
+    hostname: cockroachdb-1
+    labels:
+      com.platys.name: cockroachdb
+      com.platys.description: Cloud-native distributed SQL database
+      com.platys.webui.title: CockroachDB Admin UI
+      com.platys.webui.url: http://${PUBLIC_IP}:28406
+    ports:
+      - 26257:26257
+      - 28406:8080
+    environment:
+      COCKROACH_DATABASE: defaultdb
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./init/cockroachdb-1:/docker-entrypoint-initdb.d/
+    command: >
+      start-single-node
+      --insecure   --advertise-addr=cockroachdb-1:26357
+      --http-addr=cockroachdb-1:8080
+      --listen-addr=cockroachdb-1:26357
+      --sql-addr=cockroachdb-1:26257
+      --join=cockroachdb-1:26357
+      --store=/cockroach/cockroach-data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, cockroach, node, status, --insecure, --host=cockroachdb-1:26257]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
   #  ================================== DbGate ========================================== #
   dbgate:
     image: dbgate/dbgate:latest
@@ -346,6 +366,42 @@ services:
     volumes:
       - ./data-transfer:/data-transfer
     restart: unless-stopped
+  #  ================================== Grafana ========================================== #
+  grafana:
+    image: grafana/grafana:12.4.0-20977568970-ubuntu
+    hostname: grafana
+    container_name: grafana
+    labels:
+      com.platys.name: grafana
+      com.platys.description: Data visualization and dashboarding
+      com.platys.webui.title: Grafana UI
+      com.platys.webui.url: http://dataplatform:3000
+      com.platys.restapi.title: Grafana API
+      com.platys.restapi.url: http://dataplatform:3000/api/org
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SERVER_HTTP_ADDR=0.0.0.0
+      - GF_SERVER_HTTP_PORT=3000
+      - GF_AUTH_ANONYMOUS_ENABLED=False
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=abc123!
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./data-transfer:/data-transfer
+      - ./scripts/grafana/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+      - ./scripts/grafana/dashboards/docker/monitor_services.json:/etc/grafana/provisioning/dashboards/docker/monitor_services.json
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/3000; exit $$?;'
+      interval: 1s
+      timeout: 5s
+      retries: 5
   #  ================================== Wetty ========================================== #
   wetty:
     image: wettyoss/wetty:latest

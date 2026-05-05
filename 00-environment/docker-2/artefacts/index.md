@@ -1,4 +1,4 @@
-# nosql-platform
+# nosql-platform-2
 
 | Platform Stack | Platform Stack Version | Public IP | Docker-Host IP | Data Center | Additional Documentation
 |-------------- |------|------------|------------|------------|------------

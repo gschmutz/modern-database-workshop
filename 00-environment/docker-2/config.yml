@@ -1100,7 +1100,7 @@
       #
       # ===== Grafana ========
       #
-      GRAFANA_enable: false
+      GRAFANA_enable: true
       # list of preview features to enable (tempoSearch, tempoServiceGraph, ... see https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/feature-toggles/)
       GRAFANA_feature_toggles: ''
       # list of plugins to install (see here: https://grafana.com/grafana/plugins/) 
@@ -1378,7 +1378,7 @@
       NEO4J_volume_map_data: false
       NEO4J_volume_map_logs: false
       NEO4J_extension_script: ''
-      NEO4J_plugins: ''
+      NEO4J_plugins: 'apoc'
       NEO4J_dbms_security_procedures_unrestricted: ''
       NEO4J_dbms_logs_debug_level: 'INFO'
       # only valid for major version 5
@@ -1400,8 +1400,8 @@
       # ===== MCP Neo4j ========
       #
       NEO4J_MCP_enable: true
-      # either 'stdio' or 'sse' or 'http'
-      NEO4J_MCP_output_transport: 'sse'          
+      # either 'stdio' or 'http'
+      NEO4J_MCP_output_transport: 'http'          
       #
       # ===== Memgraph ========
       #
@@ -1576,6 +1576,11 @@
       # ===== Yugabyte ========
       #
       YUGABYTE_enable: false
+      #
+      # ===== CockroachDB ========
+      #
+      COCKROACHDB_enable: true
+      COCKROACHDB_nodes: 1      
       #
       # ===== SingleStore ========
       #

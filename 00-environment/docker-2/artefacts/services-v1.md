@@ -1,34 +1,24 @@
-# nosql-platform - List of Services
+# nosql-platform-2 - List of Services
 
 | Service | Web UI | Rest API 
 |-------------- |------|------------
-|[cassandra-1](./documentation/services/cassandra )||
+|[cockroachdb-1](./documentation/services/cockroachdb )|<http://${PUBLIC_IP}:28406>|
+|[cockroachdb-2](./documentation/services/cockroachdb )|<http://${PUBLIC_IP}:28407>|
 |[dbgate](./documentation/services/dbgate )|<http://127.0.0.1:28120>|
-|[elasticsearch-1](./documentation/services/elasticsearch )||<http://127.0.0.1:9200>
-|[elasticvue](./documentation/services/elasticvue )|<http://127.0.0.1:28275>|
+|[grafana](./documentation/services/grafana )|<http://127.0.0.1:3000>|<http://127.0.0.1:3000/api/org>
 |[graphdb-1](./documentation/services/graphdb )|<http://127.0.0.1:17200>|
 |[influxdb3](./documentation/services/influxdb3 )||<http://127.0.0.1:28263/api/v3>
 |[influxdb3-explorer](./documentation/services/influxdb3-explorer )|<http://127.0.0.1:28264>|
 |[jupyter](./documentation/services/jupyter )|<http://127.0.0.1:28888>|
-|[kibana](./documentation/services/kibana )|<http://127.0.0.1:5601>|
 |[markdown-viewer](./documentation/services/markdown-viewer )|<http://127.0.0.1:80>|
 |[mcp-inspector](./documentation/services/mcp-inspector )|<http://127.0.0.1:6274>|
-|[mongo-1](./documentation/services/mongodb )||
-|[mongo-express](./documentation/services/mongo-express )|<http://127.0.0.1:28123>|
-|[mongo-mcp](./documentation/services/mongo-mcp )||<http://127.0.0.1:28403/sse>
 |[mosquitto-1](./documentation/services/mosquitto )||
 |[mqtt-ui](./documentation/services/hivemq-ui )|<http://127.0.0.1:28136>|
 |[mqttx-cli](./documentation/services/mqttx )||
 |[neo4j-1](./documentation/services/neo4j )|<http://127.0.0.1:7474>|
-|[neo4j-mcp-cypher](./documentation/services/neo4j-mcp )||<http://127.0.0.1:28271>
-|[neo4j-mcp-memory](./documentation/services/neo4j-mcp )||<http://127.0.0.1:28272>
+|[neo4j-mcp](./documentation/services/neo4j-mcp )||<http://127.0.0.1:28271>
 |[neodash](./documentation/services/neodash )|<http://127.0.0.1:5005>|
-|[postgresql](./documentation/services/postgresql )||
 |[qdrant](./documentation/services/qdrant )|<http://127.0.0.1:6333/dashboard>|<http://127.0.0.1:6333>
-|[redis-1](./documentation/services/redis )||
-|[redis-commander](./documentation/services/redis-commander )|<http://127.0.0.1:28119>|
-|[redis-insight](./documentation/services/redis-insight )|<http://127.0.0.1:28174>|
-|[redis-mcp](./documentation/services/redis-mcp )||<http://127.0.0.1:28225/sse>
 |[telegraf](./documentation/services/telegraf )||
 |[wetty](./documentation/services/wetty )|<http://127.0.0.1:3001>||
 
