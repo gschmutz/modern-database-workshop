@@ -104,7 +104,7 @@ In a browser window, navigate to <http://dataplatform:5601> and you should direc
 
 ![Alt Image Text](./images/kibana.png "Kibana")
 
-Navigate to **Dev Tools** on the right to open the **Dev Tools Console** window. 
+Click on the **Hamburger** icon on the top left to expand the menu bar and navigate to **Dev Tools** on the right to open the **Dev Tools Console** window. 
 
 #### ElasticVue Application
 
