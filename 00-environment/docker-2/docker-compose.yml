@@ -237,11 +237,10 @@ services:
       com.platys.description: Timeseries Database UI
       com.platys.webui.title: InfluxDB 3.0 Explorer
       com.platys.webui.url: http://dataplatform:28264
-      com.platys.password.envvars: PLATYS_INFLUXDB3_EXPLORER_SECRET_KEY
     ports:
-      - 28264:80
+      - 28264:8080
     environment:
-      SESSION_SECRET_KEY: ${PLATYS_INFLUXDB3_EXPLORER_SECRET_KEY:-3fd4e9d0a3f7307fb5e3285414781fc2cfff1486d9306d0ea10dd5f39d6b0ea5}
+      SESSION_SECRET_KEY: 3fd4e9d0a3f7307fb5e3285414781fc2cfff1486d9306d0ea10dd5f39d6b0ea5
       DATABASE_URL: /db/sqlite.db
     volumes:
       - ./data-transfer:/data-transfer
