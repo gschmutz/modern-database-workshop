@@ -13,7 +13,7 @@ platys gen
 
 ## How to use it?
 
-For the OpenMetadate UI, navigate to <http://dataplatform:8585>. Log in with user `admin@open-metadata.org` and password `admin`.
+For the OpenMetadate UI, navigate to <http://192.168.1.112:8585>. Log in with user `admin@open-metadata.org` and password `admin`.
 
-For the OpenMetadata Ingestion UI, navigate to <http://dataplatform:28337>. Login in with user `admin` and password `admin`.
+For the OpenMetadata Ingestion UI, navigate to <http://192.168.1.112:28337>. Login in with user `admin` and password `admin`.
 

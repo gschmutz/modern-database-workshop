@@ -25,4 +25,4 @@ Or connect via `psql`:
 psql -h dataplatform -p 26257 -U root defaultdb
 ```
 
-Navigate to <http://dataplatform:28080> to access the CockroachDB Admin UI.
+Navigate to <http://192.168.1.112:28080> to access the CockroachDB Admin UI.

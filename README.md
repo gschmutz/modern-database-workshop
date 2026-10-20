@@ -2,7 +2,7 @@
 
 Hands-on tutorials for working with a broad spectrum of modern database systems — Relational (PostgreSQL), NewSQL (CockroachDB), Key-Value (Redis), Wide-Column (Cassandra), Document (MongoDB), Search (Elasticsearch), Graph (Neo4j, GraphDB), Time-Series (InfluxDB), and Vector (Qdrant).
 
-This workshop is part of the Trivadis course [NoSQL Databases](https://www.trivadis.com/en/training/nosql-databases-bd-nosql) as well as the [NoSQL Module of the Big Data CAS](https://www.bfh.ch/ti/de/weiterbildung/cas/big-data/) at the Berner Fachhochschule.
+This workshop is part of the Trivadis course [NoSQL Databases](https://www.trivadis.com/en/training/nosql-databases-bd-nosql) as well as the [NoSQL Module of the Data Engineering CAS](https://www.bfh.ch/de/weiterbildung/cas/data-engineering/) at the Berner Fachhochschule.
 
 ## Workshops
 

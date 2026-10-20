@@ -13,7 +13,7 @@ platys gen
 
 ## How to use it?
 
-Navigate to <http://dataplatform:28144>.
+Navigate to <http://192.168.1.112:28144>.
 
 Log in with user `datahub` and password `datahub`.
 
